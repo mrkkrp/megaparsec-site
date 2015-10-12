@@ -1,0 +1,19 @@
+name:                 megaparsec-site
+version:              0.1.0.0
+synopsis:             Site of Megaparsec project with educational materials
+description:          Site of Megaparsec project with educational materials
+homepage:             https://mrkkrp.github.io/megaparsec/
+license-file:         LICENSE.md
+author:               Mark Karpov et al
+category:             web
+build-type:           Simple
+extra-source-files:   README.md
+cabal-version:        >= 1.22
+
+executable site
+  main-is:            Main.hs
+  hs-source-dirs:     src
+  ghc-options:        -threaded -Wall
+  build-depends:      base   >= 4.8
+                    , hakyll == 4.7.*
+  default-language:   Haskell2010

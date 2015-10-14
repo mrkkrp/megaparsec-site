@@ -10,13 +10,13 @@ Program Analysis” by Nielson, Nielson and Hankin). It includes only a few
 statements and basic boolean/arithmetic expressions, which makes it a nice
 material for a tutorial.
 
-* [Imports](#imports)
-* [The language](#the-language)
-* [Data structures](#data-structures)
-* [Lexer](#lexer)
-* [Parser](#parser)
-* [Expressions](#expressions)
-* [Notes](#notes)
+1. [Imports](#imports)
+2. [The language](#the-language)
+3. [Data structures](#data-structures)
+4. [Lexer](#lexer)
+5. [Parser](#parser)
+6. [Expressions](#expressions)
+7. [Notes](#notes)
 
 ## Imports
 

@@ -24,28 +24,30 @@ subtitle: Industrial-strength monadic parser combinator library in Haskell
 * [Contribution](#contribution)
 * [License](#license)
 
-This is industrial-strength monadic parser combinator library. Megaparsec is
-a fork of [Parsec](https://github.com/aslatter/parsec) library originally
+This is an industrial-strength monadic parser combinator library. Megaparsec
+is a fork of [Parsec](https://github.com/aslatter/parsec) library originally
 written by Daan Leijen.
 
 ## Features
 
 This project provides flexible solutions to satisfy common parsing
 needs. The section describes them shortly. If you're looking for
-comprehensive documentation, see
+comprehensive documentation, see the
 [section about documentation](#documentation).
 
 ### Core features
 
-The package is built around `MonadParsec` MTL-style monad transformer. All
-tools and features work with any instance of `MonadParsec`. You can achieve
-various effects combining monad transformers, i.e. building monad
-stack. Since most common monad transformers like `WriterT`, `StateT`,
-`ReaderT` and others are instances of `MonadParsec`, you can wrap `ParsecT`
-*in* these monads, achieving, for example, backtracking state.
+The package is built around `MonadParsec`, a MTL-style monad
+transformer. All tools and features work with any instance of
+`MonadParsec`. You can achieve various effects combining monad transformers,
+i.e. building monad stack. Since most common monad transformers like
+`WriterT`, `StateT`, `ReaderT` and others are instances of `MonadParsec`,
+you can wrap `ParsecT` *in* these monads, achieving, for example,
+backtracking state.
 
-On the other hand `ParsecT` is instance of many type classes as well. Most
-useful of them are `Monad`, `Applicative`, `Alternative`, and `MonadParsec`.
+On the other hand `ParsecT` is instance of many type classes as well. The
+most useful ones are `Monad`, `Applicative`, `Alternative`, and
+`MonadParsec`.
 
 The module [`Text.Megaparsec.Combinator`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Combinator.html) (its functions are included in
 `Text.Megaparsec`) contains traditional, general combinators that work with
@@ -58,11 +60,12 @@ via combination of these primitives:
 
 * `unexpected` allows to fail specifying what exactly is unexpected.
 
-* `label` allows to add a “label” to any parser, so when it fails user will
-  see the label in error message where “expected” items are enumerated.
+* `label` allows to add a “label” to any parser, so when it fails the user
+  will see the label in the error message where “expected” items are
+  enumerated.
 
 * `hidden` hides any parser from error messages altogether, this is
-  officially recommended way to hide things, prefer it to `label ""`
+  officially recommended way to hide things, prefer it to the `label ""`
   approach.
 
 * `try` enables backtracking in parsing.
@@ -84,7 +87,7 @@ via combination of these primitives:
 
 This list of core function is longer than in some other libraries. Our goal
 was easy and readable implementation of functionality provided by every such
-primitive, not minimal number of them. You can read comprehensive
+primitive, not minimal number of them. You can read the comprehensive
 description of every primitive function in [Megaparsec documentation](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Prim.html).
 
 Megaparsec can currently work with the following types of input stream:
@@ -98,7 +101,7 @@ Megaparsec can currently work with the following types of input stream:
 ### Character parsing
 
 Megaparsec has decent support for Unicode-aware character parsing. Functions
-for character parsing live in [`Text.Megaparsec.Char`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Char.html) module (they all are
+for character parsing live in [`Text.Megaparsec.Char`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Char.html) (they all are
 included in `Text.Megaparsec`). The functions can be divided into several
 categories:
 
@@ -106,13 +109,13 @@ categories:
   characters of the same kind. This includes `newline`, `crlf`, `eol`,
   `tab`, and `space`.
 
-* *Parsers corresponding to categories of characters* parse single char that
-  belongs to certain category of characters, for example: `controlChar`,
-  `spaceChar`, `upperChar`, `lowerChar`, `printChar`, `digitChar`, and
-  others.
+* *Parsers corresponding to categories of characters* parse single character
+  that belongs to certain category of characters, for example:
+  `controlChar`, `spaceChar`, `upperChar`, `lowerChar`, `printChar`,
+  `digitChar`, and others.
 
-* *General parsers* that allow you to parse single character you specify or
-  one of given characters, or any character except for given ones, or
+* *General parsers* that allow you to parse a single character you specify
+  or one of given characters, or any character except for given ones, or
   character satisfying given predicate. Case-insensitive versions of the
   parsers are available.
 
@@ -130,34 +133,35 @@ included in `Text.Megaparsec` module.
 ### Expression parsing
 
 Megaparsec has solution for parsing of expressions. Take a look at
-[`Text.Megaparsec.Expr`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Expr.html). You should import the module explicitly, it's not
-included in `Text.Megaparsec` module.
+[`Text.Megaparsec.Expr`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Expr.html). You
+have to import the module explicitly, it's not included in the
+`Text.Megaparsec` module.
 
-Given table of operators that describes their fixity and precedence, you can
-construct a parser that will parse any expression involving the
+Given a table of operators that describes their fixity and precedence, you
+can construct a parser that will parse any expression involving the
 operators. See documentation for comprehensive description of how it works.
 
 ### Lexer
 
 [`Text.Megaparsec.Lexer`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Lexer.html)
-is module that should help you write your lexer. If you have used `Parsec`
+is a module that should help you write your lexer. If you have used `Parsec`
 in the past, this module “fixes” its particularly inflexible
 `Text.Parsec.Token`.
 
 `Text.Megaparsec.Lexer` is intended to be imported qualified, it's not
 included in `Text.Megaparsec`. The module doesn't impose how you should
 write your parser, but certain approaches may be more elegant than
-others. Especially important theme is parsing of white space, comments, and
-indentation.
+others. An especially important theme is parsing of white space, comments,
+and indentation.
 
-Design of the module allows you quickly solve simple tasks and doesn't get
-in your way when you want to implemented something less standard.
+The design of the module allows you quickly solve simple tasks and doesn't
+get in your way when you want to implemented something less standard.
 
 ## Documentation
 
 Megaparsec is well-documented. All functions and data-types are thoroughly
 described. We pay attention to avoid outdated info or unclear phrases in our
-documentation. See [current version of Megaparsec documentation on
+documentation. See the [current version of Megaparsec documentation on
 Hackage](https://hackage.haskell.org/package/megaparsec) for yourself.
 
 ## Tutorials
@@ -215,12 +219,12 @@ differences between the two libraries:
 
 * Better documentation, with 100% of functions covered, without typos and
   obsolete information, with working examples. Megaparsec's documentation is
-  well-structured and doesn't contain things useless to end user.
+  well-structured and doesn't contain things useless to end users.
 
 * Megaparsec's code is clearer and doesn't contain “magic” found in original
   Parsec.
 
-If you want to see detailed change log, `CHANGELOG.md` may be helpful.
+If you want to see a detailed change log, `CHANGELOG.md` may be helpful.
 
 To be honest Parsec's development has seemingly stagnated. It has no test
 suite (only three per-bug tests), and all its releases beginning from

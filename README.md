@@ -17,7 +17,8 @@ generate the site.
 
 If you have written a Megaparsec tutorial or would like to host other
 Megaparsec-related materials here, you can open an issue or pull
-request. Contributions are welcome.
+request. Just create new markdown document in `tutorials` directory are
+you're done! Contributions are welcome.
 
 ## License
 

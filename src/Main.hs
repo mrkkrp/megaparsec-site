@@ -32,6 +32,13 @@
 import Data.Monoid ((<>))
 import Hakyll
 
+menu :: [(String, String)]
+menu =
+  [ ("Tutorials", "tutorials.html")
+  , ("Hackage",   "https://hackage.haskell.org/package/megaparsec")
+  , ("GitHub",    "https://github.com/mrkkrp/megaparsec")
+  ]
+
 main :: IO ()
 main = hakyll $ do
 
@@ -57,7 +64,7 @@ main = hakyll $ do
       let tutorialsContext =
             listField "tutorials" datedContext (return ts) <>
             constField "title" "Tutorials" <>
-            defaultContext
+            menuContext
       makeItem ""
         >>= loadAndApplyTemplate "templates/tutorials.html" tutorialsContext
         >>= loadAndApplyTemplate "templates/default.html"   tutorialsContext
@@ -78,4 +85,10 @@ main = hakyll $ do
   match "templates/*" $ compile templateCompiler
 
 datedContext :: Context String
-datedContext = dateField "date" "%B %e, %Y" <> defaultContext
+datedContext = dateField "date" "%B %e, %Y" <> menuContext
+
+menuContext :: Context String
+menuContext = listField "menu-items" iContext (return is) <> defaultContext
+  where is = Item "item" <$> menu
+        iContext = field "item-title" (return . fst . itemBody) <>
+                   field "item-url"   (return . snd . itemBody)

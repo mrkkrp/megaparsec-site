@@ -110,9 +110,6 @@ while you are at it:
   [`Text.Megaparsec.Expr`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Expr.html)
   instead.
 
-* `sepEndBy` and `sepEndBy1` — use `sepEnd p sep <* optional sep` instead,
-  it's also easier to read without documentation lookups.
-
 ## Other
 
 * Note that argument order of `label` has been flipped (the label itself

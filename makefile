@@ -18,7 +18,7 @@ watch : build
 	$(SITE) watch
 
 deploy : build # may be brittle
-	cd ../megaparsec-gh-pages/ ; rm -vr \
+	cd ../megaparsec-gh-pages/ ; rm -vfr \
 	css/ js/ tutorials/ 404.html index.html tutorials.html
 	cd .. ; cp -vr ./megaparsec-site/_site/* ./megaparsec-gh-pages/
 	cd ../megaparsec-gh-pages/ ; git add -A ; git commit -m 'auto-sync' ; \

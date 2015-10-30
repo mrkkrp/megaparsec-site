@@ -1,6 +1,6 @@
 name:                 megaparsec-site
 version:              0.1.0.0
-license:              BSD 3 clause
+license:              BSD3
 synopsis:             Site of Megaparsec project with educational materials
 description:          Site of Megaparsec project with educational materials
 homepage:             https://mrkkrp.github.io/megaparsec/

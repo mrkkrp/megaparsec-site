@@ -24,4 +24,4 @@ you're done! Contributions are welcome.
 
 Copyright © 2015 Mark Karpov
 
-Distributed under BSD3 license.
+Distributed under BSD 3 clause license.

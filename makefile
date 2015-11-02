@@ -10,12 +10,11 @@
 #
 
 README="https://raw.githubusercontent.com/mrkkrp/megaparsec/master/README.md"
-SITE=$(shell find ./.stack-work/dist/ -name site -type f)
 
 .PHONY : get-index
 
 watch : build
-	$(SITE) watch
+	stack exec site watch
 
 deploy : build # may be brittle
 	cd ../megaparsec-gh-pages/ ; rm -vfr \
@@ -25,8 +24,8 @@ deploy : build # may be brittle
 	git push origin gh-pages
 
 build : index
-	$(SITE) clean
-	$(SITE) build
+	stack exec site clean
+	stack exec site build
 
 index :
 	curl -Lo index-original.md $(README)

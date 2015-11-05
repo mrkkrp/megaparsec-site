@@ -13,12 +13,11 @@ Megaparsec and often in better form.
 1. [Imports](#imports)
 2. [Renamed things](#renamed-things)
 3. [Removed things](#removed-things)
-4. [Obsolete functions](#obsolete-functions)
-5. [Other](#other)
-6. [Character parsing](#character-parsing)
-7. [Expression parsing](#expression-parsing)
-8. [What happened to `Text.Parsec.Token`?](#what-happened-to-text.parsec.token)
-9. [What's next?](#whats-next)
+4. [Other](#other)
+5. [Character parsing](#character-parsing)
+6. [Expression parsing](#expression-parsing)
+7. [What happened to `Text.Parsec.Token`?](#what-happened-to-text.parsec.token)
+8. [What's next?](#whats-next)
 
 ## Imports
 
@@ -99,12 +98,6 @@ that were removed in Megaparsec and reasons of their removal:
 
 * `runPT` and `runP` were essentially synonyms for `runParserT` and
   `runParser` respectively.
-
-## Obsolete functions
-
-Parsec has certain atavism or historical features that are supported in
-Megaparsec but will be removed in the future, so you better avoid using them
-while you are at it:
 
 * `chainl`, `chainl1`, `chainr`, and `chainr1` — use
   [`Text.Megaparsec.Expr`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Expr.html)

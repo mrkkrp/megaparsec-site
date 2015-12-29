@@ -30,11 +30,11 @@ uses Megaparsec looks like this:
 import Text.Megaparsec
 -- this module depends on type of data you want to parse, you only need to
 -- import one of these:
-import Text.String          -- if you parse ‘String’
-import Text.ByteString      -- if you parse strict ‘ByteString’
-import Text.ByteString.Lazy -- if you parse lazy ‘ByteString’
-import Text.Text            -- if you parse strict ‘Text’
-import Text.Text.Lazy       -- if you parse lazy ‘Text’
+import Text.Megaparsec.String          -- if you parse ‘String’
+import Text.Megaparsec.ByteString      -- if you parse strict ‘ByteString’
+import Text.Megaparsec.ByteString.Lazy -- if you parse lazy ‘ByteString’
+import Text.Megaparsec.Text            -- if you parse strict ‘Text’
+import Text.Megaparsec.Text.Lazy       -- if you parse lazy ‘Text’
 -- if you need to parse permutation phrases:
 import Text.Megaparsec.Perm
 -- if you need to parse expressions:

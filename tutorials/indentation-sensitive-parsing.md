@@ -1,7 +1,7 @@
 ---
 title: Indentation-sensitive parsing
 subtitle: Native, composable solution
-published: January 10, 2016
+published: January 12, 2016
 ---
 
 Megaparsec 4.3.0 introduces new combinators that should be of some use when
@@ -15,8 +15,7 @@ Parsec, for example.
 1. [Combinator overview](#combinator-overview)
 2. [Parsing simple indented list](#parsing-simple-indented-list)
 3. [Nested indented list](#nested-indented-list)
-4. [Parsing of trivial `do` block](#parsing-of-trivial-do-block)
-5. [Conclusion](#conclusion)
+4. [Conclusion](#conclusion)
 
 ## Combinator overview
 
@@ -53,14 +52,14 @@ However, it's a part of implementation of logical model behind high-level
 parsing of indentation-sensitive input. What is this model? We state that
 there are top-level items that are not indented (`nonIndented` helps to
 define parsers for them), and all indented tokens are directly or indirectly
-are “children” to those top-level definitions. In Megaparsec, we don't need
+are “children” of those top-level definitions. In Megaparsec, we don't need
 any additional state to express this. Since all indentation is always
 relative, our idea is to explicitly tie parsers for “reference” tokens and
 indented tokens, thus defining indentation-sensitive grammar via pure
-combination of parsers, just like all the other tools in Megaparsec. This is
-different from old solutions built on top of Parsec, where you had to deal
-with ad-hoc state. It's also more robust and safer, because the less state
-you have, the better.
+combination of parsers, just like all the other tools in Megaparsec
+work. This is different from old solutions built on top of Parsec, where you
+had to deal with ad-hoc state. It's also more robust and safer, because the
+less state you have, the better.
 
 So, how do you define indented block? `indentBlock` should handle this
 easily. Let's take a look at its signature:
@@ -72,10 +71,10 @@ indentBlock :: MonadParsec s m Char
   -> m a
 ```
 
-Here we specify how to consume indentation. Important thing to note here is
-that this space-consuming parser *must* consume newlines as well, while
-tokens (“reference” token and indented tokens) should not normally consume
-newlines after them.
+Here we specify how to consume indentation. Important thing to note is that
+this space-consuming parser *must* consume newlines as well, while tokens
+(“reference” token and indented tokens) should not normally consume newlines
+after them.
 
 As you can see, the second argument allows us to parse “reference” token and
 return a data structure that tells `indentBlock` what to do next. There are
@@ -96,7 +95,7 @@ data IndentOpt m a b
 ```
 
 We can change our mind and parse no indented tokens, we can parse *many*
-(that is, possibly zero) indented tokens or require at least one such
+(that is, possibly zero) indented tokens or require *at least one* such
 token. We can either allow `indentBlock` detect indentation level of first
 indented token and use that, or manually specify indentation level. This
 should be flexible enough.
@@ -139,10 +138,9 @@ lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc'
 ```
 
-Just for fun, we will allow comments that start with `#` as well.
+Just for fun, we will allow line comments that start with `#` as well.
 
-Assuming `pItemList` parsers entire list, we can define high-level parser
-as:
+Assuming `pItemList` parses entire list, we can define high-level parser as:
 
 ```haskell
 parser :: Parser (String, [String])
@@ -160,13 +158,15 @@ pItemList = L.nonIndented sc (L.indentBlock sc p)
   where p = do
           header <- pItem
           return (L.IndentMany Nothing (return . (header, )) pItem)
-
-pItem :: Parser String
-pItem = lexeme $ some (alphaNumChar <|> char '-')
 ```
 
 For our purposes, an item is a sequence of alpha-numeric characters and
-dashes.
+dashes:
+
+```haskell
+pItem :: Parser String
+pItem = lexeme $ some (alphaNumChar <|> char '-')
+```
 
 Now, load the code into GHCi and try it with help of `parseTest` built-in:
 
@@ -177,24 +177,30 @@ unexpected end of input
 expecting '-' or alphanumeric character
 λ> parseTest parser "something"
 ("something",[])
-λ> parseTest parser "something\none\ntwo\nthree\n"
+λ> parseTest parser "  something"
+1:3:
+incorrect indentation
+λ> parseTest parser "something\none\ntwo\nthree"
 2:1:
 unexpected 'o'
 expecting end of input
 ```
 
 Remember that we're using `IndentMany` option, so empty lists are OK, on the
-other hand built-in combinator `space` has hidden space from error messages,
-so this error message is perfectly reasonable. Let's continue:
+other hand built-in combinator `space` has hidden the phrase “expecting more
+space” from error messages (usually you don't want it because it adds noise
+to all messages), so this error message is perfectly reasonable.
+
+Let's continue:
 
 ```haskell
-λ> parseTest parser "something\n  one\n    two\n  three\n"
+λ> parseTest parser "something\n  one\n    two\n  three"
 3:5:
 incorrect indentation
-λ> parseTest parser "something\n  one\n  two\n three\n"
+λ> parseTest parser "something\n  one\n  two\n three"
 4:2:
 incorrect indentation
-λ> parseTest parser "something\n  one\n  two\n  three\n"
+λ> parseTest parser "something\n  one\n  two\n  three"
 ("something",["one","two","three"])
 ```
 
@@ -216,15 +222,15 @@ Now:
 λ> parseTest parser "something\n"
 2:1:
 incorrect indentation
-λ> parseTest parser "something\n  one\n"
+λ> parseTest parser "something\n  one"
 2:3:
 incorrect indentation
-λ> parseTest parser "something\n    one\n"
+λ> parseTest parser "something\n    one"
 ("something",["one"])
 ```
 
-First case may be a bit surprising, but Megaparsec knows that there must be
-at least one item in the list, so it checks indentation level and it's 1,
+First message may be a bit surprising, but Megaparsec knows that there must
+be at least one item in the list, so it checks indentation level and it's 1,
 which is incorrect, so it reports it. I find current behavior satisfactory,
 but it may be changed in the future.
 
@@ -234,8 +240,61 @@ What I like about `indentBlock` is that another `indentBlock` can be put
 inside of it and the whole thing will work smoothly, parsing more complex
 input with several levels of indentation. No additional effort is required.
 
-Let's allow list items to have sub-items.
+Let's allow list items to have sub-items. For this we will need one new
+parser, `pComplexItem` (looks familiar…):
 
-## Parsing of trivial `do` block
+```haskell
+pComplexItem :: Parser (String, [String])
+pComplexItem = L.indentBlock sc p
+  where p = do
+          header <- pItem
+          return (L.IndentMany Nothing (return . (header, )) pItem)
+```
+
+A couple of edits to `pItemList` (we're now parsing more complex stuff, so
+we need to reflect this in the type signatures):
+
+```haskell
+parser :: Parser (String, [(String, [String])])
+parser = pItemList <* eof
+
+pItemList :: Parser (String, [(String, [String])])
+pItemList = L.nonIndented sc (L.indentBlock sc p)
+  where p = do
+          header <- pItem
+          return (L.IndentSome Nothing (return . (header, )) pComplexItem)
+```
+
+If I feed something like this:
+
+```
+first-chapter
+  paragraph-one
+      note-A # an important note here!
+      note-B
+  paragraph-two
+    note-1
+    note-2
+  paragraph-three
+```
+
+…into our parser, I get:
+
+```haskell
+Right
+  ( "first-chapter"
+  , [ ("paragraph-one",   ["note-A","note-B"])
+    , ("paragraph-two",   ["note-1","note-2"])
+    , ("paragraph-three", []) ] )
+```
+
+And this looks like it works!
 
 ## Conclusion
+
+Note that every sub-list behaves independently — you will see that if you
+try to feed the parser with various variants of malformed data (that's kind
+of exercise for the reader). And this is no surprise, since no state is
+shared between different parts of the structure — it's just assembled purely
+from simpler parts — sufficiently elegant solution in the spirit of the rest
+of the library.

@@ -12,6 +12,10 @@ blockquote {
     font-size: 16px;
 }
 
+.navbar-inverse {
+    border-radius: 0px;
+}
+
 code {
     color: #4070a0;
 }

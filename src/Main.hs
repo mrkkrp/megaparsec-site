@@ -1,4 +1,3 @@
--- -*- Mode: Haskell; -*-
 --
 -- Web-site of Megaparsec project.
 --

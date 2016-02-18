@@ -1,7 +1,7 @@
 ---
 title: Switch from Parsec to Megaparsec
 subtitle: Practical recommendations
-published: October 15, 2015
+published: February 18, 2016
 ---
 
 Some progressive Haskell hackers may wish to switch from Parsec to
@@ -130,7 +130,11 @@ that were removed in Megaparsec and reasons of their removal:
 
 * `count' m n p` allows you to parse from `m` to `n` occurrences of `p`.
 
-* Now you have `someTill` out of box.
+* Now you have `someTill` and `eitherP` out of box.
+
+* `token`-based combinators like `string` and `string'` backtrack by
+  default, so it's not necessary to use `try` with them (beginning from
+  `4.4.0`). This feature does not affect performance.
 
 ## Character parsing
 

@@ -36,7 +36,7 @@ to explore new parsing feature, this language will do.
 First, we will write parser that can parse entire program in this language
 as list of ASTs representing equations. Then we will make it
 failure-tolerant in a way, so when it cannot parse particular equation, it
-does not stop, but continues its work until all input has been analyzed.
+does not stop, but continues its work until all input is analyzed.
 
 ## Parser without recovery
 
@@ -207,8 +207,8 @@ type RawData = [Either ParseError Equation]
 ```
 
 This will represent collection of equations, just like `Program`, but every
-one of them may have been malformed: in that case we get original error
-message in `Left`, otherwise we have properly parsed equation in `Right`.
+one of them may be malformed: in that case we get original error message in
+`Left`, otherwise we have properly parsed equation in `Right`.
 
 You will be amazed just how easy it is to add recovering to existing parser:
 

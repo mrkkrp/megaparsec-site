@@ -210,7 +210,7 @@ symbol = L.symbol sc
 
 ### Monad transformers
 
-Note that all tools in Megparsec work with any instance of
+Note that all tools in Megaparsec work with any instance of
 `MonadParsec`. All commonly useful monad transformers like `StateT` and
 `WriterT` are instances of `MonadParsec` out of box. For example, what if
 you want to collect contents of comments, (say, they are documentation

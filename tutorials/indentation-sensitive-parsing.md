@@ -1,21 +1,21 @@
 ---
 title: Indentation-sensitive parsing
 subtitle: Native, composable solution
-published: January 12, 2016
+published: May 14, 2016
 ---
 
 Megaparsec 4.3.0 introduces new combinators that should be of some use when
-you want to parse indentation-sensitive input. The combinators do not yet
-cover all possible use-cases, but certain class of problems should be
-trivial to solve now. This tutorial shows how these new tools work, compose,
-and hopefully, *feel natural* — something we cannot say about ad-hoc
-solutions to this problem that exist as separate packages to work on top of
-Parsec, for example.
+you want to parse indentation-sensitive input. Megaparsec 5.0.0 adds support
+for line-folds completing support for indentation-sensitive parsing. This
+tutorial shows how these new tools work, compose, and hopefully, *feel
+natural* — something we cannot say about ad-hoc solutions to this problem
+that exist as separate packages to work on top of Parsec, for example.
 
 1. [Combinator overview](#combinator-overview)
 2. [Parsing simple indented list](#parsing-simple-indented-list)
 3. [Nested indented list](#nested-indented-list)
-4. [Conclusion](#conclusion)
+4. [Adding line folds](#adding-line-folds)
+5. [Conclusion](#conclusion)
 
 ## Combinator overview
 
@@ -27,7 +27,7 @@ it and available beginning from Megaparsec 4.3.0.
 First, we have `indentLevel`, which is defined just as:
 
 ```haskell
-indentLevel :: MonadParsec s m t => m Int
+indentLevel :: MonadParsec e s m => m Pos
 indentLevel = sourceColumn <$> getPosition
 ```
 
@@ -41,11 +41,11 @@ done.
 `nonIndented` is trivial to write as well:
 
 ```haskell
-nonIndented :: MonadParsec s m Char
+nonIndented :: MonadParsec e s m
   => m ()              -- ^ How to consume indentation (white space)
   -> m a               -- ^ How to parse actual data
   -> m a
-nonIndented sc p = indentGuard sc (== 1) *> p
+nonIndented sc p = indentGuard sc EQ (unsafePos 1) *> p
 ```
 
 However, it's a part of implementation of logical model behind high-level
@@ -65,7 +65,7 @@ So, how do you define indented block? `indentBlock` should handle this
 easily. Let's take a look at its signature:
 
 ```haskell
-indentBlock :: MonadParsec s m Char
+indentBlock :: (MonadParsec e s m, Token s ~ Char)
   => m ()              -- ^ How to consume indentation (white space)
   -> m (IndentOpt m a b) -- ^ How to parse “reference” token
   -> m a
@@ -90,7 +90,7 @@ data IndentOpt m a b
     -- second argument tells how to get final result, and third argument
     -- describes how to parse indented token
   | IndentSome (Maybe Int) ([b] -> m a) (m b)
-    -- ^ Just like 'ManyIndent', but requires at least one indented token to
+    -- ^ Just like 'IndentMany', but requires at least one indented token to
     -- be present
 ```
 
@@ -100,10 +100,6 @@ token. We can either allow `indentBlock` detect indentation level of first
 indented token and use that, or manually specify indentation level. This
 should be flexible enough.
 
-Experienced reader will notice that one topic is not covered here: line
-folding. This is not yet implemented functionality, but in future it will
-be. If you care, you can propose your solution and open a pull request.
-
 ## Parsing simple indented list
 
 Now it's time to put our new tools into practice. In this section, we will
@@ -112,7 +108,7 @@ parse simple indented list of some items. Let's begin with import section:
 ```haskell
 {-# LANGUAGE TupleSections #-}
 
-module Main where
+module Main (main) where
 
 import Control.Applicative (empty)
 import Control.Monad (void)
@@ -128,14 +124,14 @@ and one that doesn't `sc'` (actually it only parses spaces and tabs here):
 lineComment :: Parser ()
 lineComment = L.skipLineComment "#"
 
-sc :: Parser ()
-sc = L.space (void spaceChar) lineComment empty
+scn :: Parser ()
+scn = L.space (void spaceChar) lineComment empty
 
-sc' :: Parser ()
-sc' = L.space (void $ oneOf " \t") lineComment empty
+sc :: Parser ()
+sc = L.space (void $ oneOf " \t") lineComment empty
 
 lexeme :: Parser a -> Parser a
-lexeme = L.lexeme sc'
+lexeme = L.lexeme sc
 ```
 
 Just for fun, we will allow line comments that start with `#` as well.
@@ -154,10 +150,11 @@ token (header of list) and indented tokens (list items), so:
 
 ```haskell
 pItemList :: Parser (String, [String]) -- header and list items
-pItemList = L.nonIndented sc (L.indentBlock sc p)
-  where p = do
-          header <- pItem
-          return (L.IndentMany Nothing (return . (header, )) pItem)
+pItemList = L.nonIndented scn (L.indentBlock scn p)
+  where
+    p = do
+      header <- pItem
+      return (L.IndentMany Nothing (return . (header, )) pItem)
 ```
 
 For our purposes, an item is a sequence of alpha-numeric characters and
@@ -179,7 +176,7 @@ expecting '-' or alphanumeric character
 ("something",[])
 λ> parseTest parser "  something"
 1:3:
-incorrect indentation
+incorrect indentation (got 3, should be equal to 1)
 λ> parseTest parser "something\none\ntwo\nthree"
 2:1:
 unexpected 'o'
@@ -196,10 +193,10 @@ Let's continue:
 ```haskell
 λ> parseTest parser "something\n  one\n    two\n  three"
 3:5:
-incorrect indentation
+incorrect indentation (got 5, should be equal to 3)
 λ> parseTest parser "something\n  one\n  two\n three"
 4:2:
-incorrect indentation
+incorrect indentation (got 2, should be equal to 3)
 λ> parseTest parser "something\n  one\n  two\n  three"
 ("something",["one","two","three"])
 ```
@@ -210,10 +207,11 @@ will require 4 spaces before indented items):
 
 ```haskell
 pItemList :: Parser (String, [String])
-pItemList = L.nonIndented sc (L.indentBlock sc p)
-  where p = do
-          header <- pItem
-          return (L.IndentSome (Just 5) (return . (header, )) pItem)
+pItemList = L.nonIndented scn (L.indentBlock scn p)
+  where
+    p = do
+      header <- pItem
+      return (L.IndentSome (Just (unsafePos 5)) (return . (header, )) pItem)
 ```
 
 Now:
@@ -221,10 +219,10 @@ Now:
 ```haskell
 λ> parseTest parser "something\n"
 2:1:
-incorrect indentation
+incorrect indentation (got 1, should be greater than 1)
 λ> parseTest parser "something\n  one"
 2:3:
-incorrect indentation
+incorrect indentation (got 3, should be equal to 5)
 λ> parseTest parser "something\n    one"
 ("something",["one"])
 ```
@@ -246,9 +244,10 @@ parser, `pComplexItem` (looks familiar…):
 ```haskell
 pComplexItem :: Parser (String, [String])
 pComplexItem = L.indentBlock sc p
-  where p = do
-          header <- pItem
-          return (L.IndentMany Nothing (return . (header, )) pItem)
+  where
+    p = do
+      header <- pItem
+      return (L.IndentMany Nothing (return . (header, )) pItem)
 ```
 
 A couple of edits to `pItemList` (we're now parsing more complex stuff, so
@@ -259,10 +258,11 @@ parser :: Parser (String, [(String, [String])])
 parser = pItemList <* eof
 
 pItemList :: Parser (String, [(String, [String])])
-pItemList = L.nonIndented sc (L.indentBlock sc p)
-  where p = do
-          header <- pItem
-          return (L.IndentSome Nothing (return . (header, )) pComplexItem)
+pItemList = L.nonIndented scn (L.indentBlock scn p)
+  where
+    p = do
+      header <- pItem
+      return (L.IndentSome Nothing (return . (header, )) pComplexItem)
 ```
 
 If I feed something like this:
@@ -289,6 +289,40 @@ Right
 ```
 
 And this looks like it works!
+
+## Adding line folds
+
+`lineFold` helper is introduced in Megaparsec 5.0.0. Line fold consists of
+several elements that can be put on one line or on several lines as long as
+indentation level of subsequent items is greater than indentation level of
+first item.
+
+Let's make use of `lineFold` and add line folds to our program.
+
+```haskell
+pComplexItem :: Parser (String, [String])
+pComplexItem = L.indentBlock scn p
+  where
+    p = do
+      header <- pItem
+      return (L.IndentMany Nothing (return . (header, )) pLineFold)
+
+pLineFold :: Parser String
+pLineFold = L.lineFold scn $ \sc' ->
+  let ps = some (alphaNumChar <|> char '-') `sepBy1` try sc'
+  in unwords <$> ps <* scn
+```
+
+`lineFold` works like this: you give it space consumer that accepts newlines
+and it gives you special space consumer that you can use in callback to
+consume space between elements of line fold. Important thing here is that
+you should use normal space consumer at the end of line fold or your fold
+will have no end.
+
+Playing with the final version of our parser is left as an exercise for the
+reader — you can create “items” that consist of multiple words and as long
+as they are “line-folded” they will be parsed and concatenated with single
+space between them.
 
 ## Conclusion
 

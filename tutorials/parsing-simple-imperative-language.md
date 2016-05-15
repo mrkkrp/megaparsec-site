@@ -1,7 +1,7 @@
 ---
 title: Parsing a simple imperative language
 subtitle: Based on original Parsec tutorial
-published: October 13, 2015
+published: May 14, 2015
 ---
 
 This tutorial will present how to parse a subset of a simple imperative
@@ -159,17 +159,17 @@ symbol = L.symbol sc
 With these tools we can create other useful parsers:
 
 ```haskell
--- ‘parens’ parses something between parenthesis
+-- | 'parens' parses something between parenthesis.
 
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
 
--- ‘integer’ parses an integer
+-- | 'integer' parses an integer.
 
 integer :: Parser Integer
 integer = lexeme L.integer
 
--- ‘semi’ parses a semicolon
+-- | 'semi' parses a semicolon.
 
 semi :: Parser String
 semi = symbol ";"
@@ -195,10 +195,11 @@ rws = ["if","then","else","while","do","skip","true","false","not","and","or"]
 
 identifier :: Parser String
 identifier = lexeme (p >>= check)
-  where p       = (:) <$> letterChar <*> many alphaNumChar
-        check x = if x `elem` rws
-                  then fail $ "keyword " ++ show x ++ " cannot be an identifier"
-                  else return x
+  where
+    p       = (:) <$> letterChar <*> many alphaNumChar
+    check x = if x `elem` rws
+                then fail $ "keyword " ++ show x ++ " cannot be an identifier"
+                else return x
 ```
 
 `identifier` may seem complex, but it's really simple. We just parse

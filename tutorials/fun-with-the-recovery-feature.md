@@ -1,7 +1,7 @@
 ---
 title: Fun with the recovery feature
 subtitle: Megaparsec has grown even more powerful in version 4.4.0
-published: February 19, 2016
+published: May 14, 2016
 ---
 
 Megaparsec 4.4.0 is a major improvement of the library. Among other things,
@@ -44,11 +44,13 @@ The parser is very easy to write. We will need the following imports:
 
 ```haskell
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Main where
 
 import Control.Applicative (empty)
 import Control.Monad (void)
+import Data.Scientific (toRealFloat)
 import Text.Megaparsec
 import Text.Megaparsec.String
 import Text.Megaparsec.Expr
@@ -145,9 +147,7 @@ table =
   ]
 
 number :: Parser Double
-number = f <$> lexeme L.number
-  where f (Left  x) = fromIntegral x
-        f (Right x) = x
+number = toRealFloat <$> lexeme L.number
 
 parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
@@ -203,7 +203,7 @@ once.
 Let's add one more type synonym — `RawData`:
 
 ```haskell
-type RawData = [Either ParseError Equation]
+type RawData t e = [Either (ParseError t e) Equation]
 ```
 
 This will represent collection of equations, just like `Program`, but every
@@ -213,7 +213,7 @@ one of them may be malformed: in that case we get original error message in
 You will be amazed just how easy it is to add recovering to existing parser:
 
 ```haskell
-rawData :: Parser RawData
+rawData :: Parser (RawData Char Dec)
 rawData = between scn eof (sepEndBy e scn)
   where e = withRecovery recover (Right <$> equation)
         recover err = Left err <$ manyTill anyChar eol
@@ -229,10 +229,18 @@ bar = 15
 Result:
 
 ```
-[Left 1:10:
-unexpected '$'
-expecting ')', operator, or rest of expression,
-Right (Equation "bar" (Value 15.0))]
+[ Left
+   (ParseError
+     { errorPos = SourcePos
+       { sourceName = "", sourceLine = Pos 1
+       , sourceColumn = Pos 10} :| []
+       , errorUnexpected = fromList [Tokens ('$' :| "")]
+       , errorExpected = fromList
+         [ Tokens (')' :| "")
+         , Label ('o' :| "perator")
+         , Label ('r' :| "est of expression") ]
+       , errorCustom = fromList [] })
+, Right (Equation "bar" (Value 15.0)) ]
 ```
 
 How does it work? `withRecovery r p` primitive runs parser `p` as usual, but

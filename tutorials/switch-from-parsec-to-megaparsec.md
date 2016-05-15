@@ -1,7 +1,7 @@
 ---
 title: Switch from Parsec to Megaparsec
 subtitle: Practical recommendations
-published: February 18, 2016
+published: May 14, 2016
 ---
 
 Some progressive Haskell hackers may wish to switch from Parsec to
@@ -13,11 +13,12 @@ Megaparsec and often in better form.
 1. [Imports](#imports)
 2. [Renamed things](#renamed-things)
 3. [Removed things](#removed-things)
-4. [Other](#other)
-5. [Character parsing](#character-parsing)
-6. [Expression parsing](#expression-parsing)
-7. [What happened to `Text.Parsec.Token`?](#what-happened-to-text.parsec.token)
-8. [What's next?](#whats-next)
+4. [Completely changed things](#completely-changed-things)
+5. [Other](#other)
+6. [Character parsing](#character-parsing)
+7. [Expression parsing](#expression-parsing)
+8. [What happened to `Text.Parsec.Token`?](#what-happened-to-text.parsec.token)
+9. [What's next?](#whats-next)
 
 ## Imports
 
@@ -74,24 +75,21 @@ Character parsing:
 * `spaces` → `space`
 * `upper` → `upperChar`
 
-Error message constructors:
-
-* `UnExpect` and `SysUnExpect` → `Unexpected` (we don't make the difference,
-  all unexpected messages are the same in Megaparsec);
-
-* `Expect` → `Expected`.
-
 ## Removed things
 
 Parsec also has many names for the same or similar things. Megaparsec
 usually has one function per task that does its job well. Here are the items
 that were removed in Megaparsec and reasons of their removal:
 
+* `parseFromFile` — from file and then parsing its contents is trivial for
+  every instance of `Stream` and this function provides no way to use newer
+  methods for running a parser, such as `runParser'`.
+
 * `getState`, `putState`, `modifyState` — ad-hoc backtracking user state has
   been eliminated.
 
-* `token`, now there is a bit different version of this function under the
-  same name.
+* `unexpected`, `token` and `tokens`, now there is a bit different versions
+  of these functions under the same name.
 
 * `Reply` and `Consumed` are not public data types anymore, because they are
   low-level implementation details.
@@ -103,7 +101,18 @@ that were removed in Megaparsec and reasons of their removal:
   [`Text.Megaparsec.Expr`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Expr.html)
   instead.
 
+## Completely changed things
+
+In Megaparsec 5 the modules `Text.Megaparsec.Pos` and
+`Text.Megaparsec.Error` are completely different from those found in Parsec
+and Megaparsec 4. Take some time to look at documentation of the modules if
+your use-case requires operations on error messages or positions. You may
+like the fact that we have well-typed and extensible error messages now.
+
 ## Other
+
+* The `Stream` type class now have `updatePos` method that gives precise
+  control over advancing of textual positions during parsing.
 
 * Note that argument order of `label` has been flipped (the label itself
   goes first now), so you can write now: `myParser = label "my parser" $ …`.
@@ -111,22 +120,25 @@ that were removed in Megaparsec and reasons of their removal:
 * Don't use `label ""` (or `… <?> ""`) idiom to “hide” some “expected”
   tokens from error messages, use `hidden`.
 
-* New `token` parser is more powerful, its second argument has type `t ->
-  Either [Message] a`, so if it fails, it has complete control over
-  resulting error message.
+* New `token` parser is more powerful, its first argument provides full
+  control over reported error message while its second argument allows to
+  specify how to report missing token in case of empty input stream.
+
+* Now `tokens` parser allows to control how tokens are compared (yes, we
+  have case-insensitive `string`).
+
+* The `unexpected` parser allows to specify precisely what is unexpected in
+  well-typed manner.
 
 * Tab width is not hard-coded anymore, use `getTabWidth` and `setTabWidth`
   to change it. Default tab width is `defaultTabWidth`.
 
 * Now you can reliably test error messages, equality for them is now defined
-  properly (in Parsec `Expect "foo"` is equal to `Expect "bar"`), collection
-  of error messages is always sorted properly and duplicates cannot occur in
-  message list as well as empty messages.
+  properly (in Parsec `Expect "foo"` is equal to `Expect "bar"`), error
+  messages are also well-typed and customizeable.
 
-* To render error message in custom way, use `show` on error position and
-  `showMessages` (lives in
-  [`Text.Megaparsec.Error`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Error.html))
-  on error messages.
+* To render error message in custom way, call `parseErrorPretty` on error
+  messages.
 
 * `count' m n p` allows you to parse from `m` to `n` occurrences of `p`.
 
@@ -135,6 +147,9 @@ that were removed in Megaparsec and reasons of their removal:
 * `token`-based combinators like `string` and `string'` backtrack by
   default, so it's not necessary to use `try` with them (beginning from
   `4.4.0`). This feature does not affect performance.
+
+* The new `failure` combinator allows to fail with arbitrary error message,
+  even with completely custom one.
 
 ## Character parsing
 
@@ -264,6 +279,10 @@ could get current indentation level (indentation level on previous line),
 then consume indentation of current line, perform necessary checks, and put
 new level of indentation.
 
+*Later update*: now we have full support for indentation-sensitive parsing,
+see `nonIndented`, `indentBlock`, and `lineFold` in the
+`Text.Megaparsec.Lexer` module.
+
 ### Character and string literals
 
 Parsing of string and character literals is done a bit differently than in
@@ -304,21 +323,23 @@ integer = lexeme L.integer
 float :: Parser Double
 float = lexeme L.float
 
-number :: Parser (Either Integer Double)
+number :: Parser Scientific
 number lexeme L.number -- similar to ‘naturalOrFloat’ in Parsec
 ```
 
 Note that Megaparsec internally uses standard Haskell functions to parse
 floating point numbers, thus no precision loss is possible (and it's
-tested). On the other hand, Parsec again re-implements the whole
-thing. Approach taken by Parsec authors is just parse the numbers one by one
-and then re-create the floating point number by means of floating point
+tested). On the other hand, Parsec again re-implements the whole thing.
+Approach taken by Parsec authors is just parse the numbers one by one and
+then re-create the floating point number by means of floating point
 arithmetic. Any professional knows that this is not possible and the only
 way to parse floating point number is via bit-level manipulation (it's
 usually done on OS level, in C libraries). Of course results produced by
 Parsec built-in parser for floating point numbers are incorrect. This is a
 known bug now, but it's been a long time till we “discovered” it, because
-again, Parsec has no test suite.
+again, Parsec has no test suite. (*Update*: it took one year but Parsec's
+maintainer has recently merged a pull request that seems to fix that and
+released Parsec 3.1.11.)
 
 Hexadecimal and octal numbers do not parse “0x” or “0o” prefixes, because
 different languages may have other prefixes for this sort of numbers. We
@@ -343,7 +364,7 @@ signedInteger = L.signed sc integer
 signedFloat :: Parser Double
 signedFloat = L.signed sc float
 
-signedNumber :: Parser (Either Integer Double)
+signedNumber :: Parser Scientific
 signedNumber = L.signed sc number
 ```
 

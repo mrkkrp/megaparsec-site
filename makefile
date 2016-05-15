@@ -12,12 +12,12 @@
 GH_PAGES="https://github.com/mrkkrp/megaparsec.git"
 README="https://raw.githubusercontent.com/mrkkrp/megaparsec/master/README.md"
 
-.PHONY : get-index
+.PHONY : index gh-pages
 
 watch : build
 	stack exec site watch
 
-deploy : build gh-pages # may be brittle
+deploy : build gh-pages
 	cd megaparsec-gh-pages/ ; rm -vfr \
 	css/ js/ tutorials/ 404.html index.html tutorials.html
 	cp -vr _site/* megaparsec-gh-pages/

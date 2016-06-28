@@ -161,7 +161,7 @@ with it a bit. Use `parseTest` function to feed input into the parser:
 λ> parseTest expr "5"
 Value 5.0
 λ> parseTest expr "5 + foo"
-Multiplication (Value 5.0) (Reference "foo")
+Sum (Value 5.0) (Reference "foo")
 λ> parseTest expr "(x + y) * 5 + 7 * z"
 Sum
   (Multiplication (Sum (Reference "x") (Reference "y")) (Value 5.0))

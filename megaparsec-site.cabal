@@ -1,15 +1,23 @@
 name:                 megaparsec-site
 version:              0.1.0.0
+cabal-version:        >= 1.10
 license:              BSD3
 synopsis:             Site of Megaparsec project with educational materials
 description:          Site of Megaparsec project with educational materials
 homepage:             https://mrkkrp.github.io/megaparsec/
 license-file:         LICENSE.md
-author:               Mark Karpov et al
-category:             web
+author:               Mark Karpov <markkarpov@opmbx.org>
+maintainer:           Mark Karpov <markkarpov@opmbx.org>
+category:             Web
 build-type:           Simple
-extra-source-files:   README.md
-cabal-version:        >= 1.22
+extra-doc-files:      README.md
+extra-source-files:   makefile
+data-files:           css/*.css
+                    , js/*.min.js
+                    , templates/*.html
+                    , tutorials/*.md
+                    , 404.md
+                    , index-header.md
 
 executable site
   main-is:            Main.hs

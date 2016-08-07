@@ -13,7 +13,6 @@ build-type:           Simple
 extra-doc-files:      README.md
 extra-source-files:   makefile
 data-files:           css/*.css
-                    , js/*.min.js
                     , templates/*.html
                     , tutorials/*.md
                     , 404.md

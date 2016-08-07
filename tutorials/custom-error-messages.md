@@ -1,6 +1,6 @@
 ---
 title: How to introduce custom error messages
-subtitle: With Megaparsec 5 it's possible to
+subtitle: With Megaparsec 5 it's possible to use user-defined data types as part of parse errors
 published: August  7, 2016
 ---
 
@@ -9,20 +9,21 @@ types as part of data that is returned on parse failure. This opens up the
 possibility to tailor error messages to your domain of interest in a way
 that is quite unique to this library. Needless to say, all data that
 constitutes a error message is typed in Megaparsec 5, so it's easy to
-inspect it and manipulate after the fact.
+inspect and manipulate it after the fact.
 
 ## The goal
 
-In this tutorial we will walk through creation of parser of an existing
-library called
+In this tutorial we will walk through creation of a parser found in an
+existing library called
 [`cassava-megaparsec`](https://hackage.haskell.org/package/cassava-megaparsec),
-which is an alternative parser for the popular `cassava` library that allows
+which is an alternative parser for the popular
+[`cassava`](https://hackage.haskell.org/package/cassava) library that allows
 to parse CSV data. The default parser features not very user-friendly error
-messages, so I was asked to design a better one using Megaparsec.
+messages, so I was asked to design a better one using Megaparsec 5.
 
 In addition to standard error messages, the library can report problems that
-have to do with using methods to `FromRecord` and `FromNamedRecord` type
-classes that describe how to transform collection of `ByteString`s into a
+have to do with using methods from `FromRecord` and `FromNamedRecord` type
+classes that describe how to transform a collection of `ByteString`s into a
 particular instance of those type classes. While performing the conversion,
 things may go wrong, and we would like to use a special data constructor in
 these cases.
@@ -82,15 +83,174 @@ for the rest of the stuff (qualified as `C`).
 To start with custom error messages we should take a look at how parse
 errors are represented in Megaparsec 5.
 
-…
+The main type for error messages in `ParseError` which is defined like this:
+
+```haskell
+-- | The data type @ParseError@ represents parse errors. It provides the
+-- stack of source positions, set of expected and unexpected tokens as well
+-- as set of custom associated data. The data type is parametrized over
+-- token type @t@ and custom data @e@.
+--
+-- Note that stack of source positions contains current position as its
+-- head, and the rest of positions allows to track full sequence of include
+-- files with topmost source file at the end of the list.
+--
+-- 'Semigroup' (or 'Monoid') instance of the data type allows to merge parse
+-- errors from different branches of parsing. When merging two
+-- 'ParseError's, longest match is preferred; if positions are the same,
+-- custom data sets and collections of message items are combined.
+
+data ParseError t e = ParseError
+  { errorPos        :: NonEmpty SourcePos -- ^ Stack of source positions
+  , errorUnexpected :: Set (ErrorItem t)  -- ^ Unexpected items
+  , errorExpected   :: Set (ErrorItem t)  -- ^ Expected items
+  , errorCustom     :: Set e              -- ^ Associated data, if any
+  } deriving (Show, Read, Eq, Data, Typeable, Generic)
+```
+
+Conceptually, we have four components in a parse error:
+
+* Position (may be multi-dimensional to support include files).
+
+* Unexpected “items” (see [`ErrorItem`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Error.html#t:ErrorItem) if you are curious).
+
+* Expected “items”.
+
+* Everything else — here we have a set of things of `e` type. `e` is the
+  type we will be defining and using in this tutorial.
 
 ## Defining custom error component
 
-…
+We cannot ship the library without some sort of default candidate to take
+the place of `e` type, so here it is:
+
+```haskell
+-- | “Default error component”. This in our instance of 'ErrorComponent'
+-- provided out-of-box.
+--
+-- @since 5.0.0
+
+data Dec
+  = DecFail String         -- ^ 'fail' has been used in parser monad
+  | DecIndentation Ordering Pos Pos
+    -- ^ Incorrect indentation error: desired ordering between reference
+    -- level and actual level, reference indentation level, actual
+    -- indentation level
+  deriving (Show, Read, Eq, Ord, Data, Typeable)
+```
+
+As you can see it is just a sum type that accounts for all types of failures
+that we need to think about in the vanilla Megaparsec:
+
+* `fail` method
+* …and incorrect indentation related to machinery in
+  [`Text.Megaparsec.Lexer`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Lexer.html).
+
+What this means is that our new custom type should somehow provide a way to
+represent those things too. The requirement that a type should be capable to
+represent the above-mentioned exceptional situations is captured by the
+`ErrorComponent` type class:
+
+```haskell
+-- | The type class defines how to represent information about various
+-- exceptional situations. Data types that are used as custom data component
+-- in 'ParseError' must be instances of this type class.
+--
+-- @since 5.0.0
+
+class Ord e => ErrorComponent e where
+
+  -- | Represent message passed to 'fail' in parser monad.
+  --
+  -- @since 5.0.0
+
+  representFail :: String -> e
+
+  -- | Represent information about incorrect indentation.
+  --
+  -- @since 5.0.0
+
+  representIndentation
+    :: Ordering -- ^ Desired ordering between reference level and actual level
+    -> Pos             -- ^ Reference indentation level
+    -> Pos             -- ^ Actual indentation level
+    -> e
+```
+
+Every type that is going to be used as part of `ParseError` must be an
+instance of `ErrorComponent` type class.
+
+Another thing we would like to do with custom error component is to format
+it somehow, so it could be inserted in pretty-printed representation of
+`ParseError`. This behavior is defined by the `ShowErrorComponent` type
+class:
+
+```haskell
+-- | The type class defines how to print custom data component of
+-- 'ParseError'.
+--
+-- @since 5.0.0
+
+class Ord a => ShowErrorComponent a where
+
+  -- | Pretty-print custom data component of 'ParseError'.
+
+  showErrorComponent :: a -> String
+```
+
+We will need to make our new data type instance of that class as well.
+
+So, let's start. We can grab existing definitions and instances of `Dec`
+data type and change them as necessary. The special case we want to support
+is about failed conversion from vectior of `ByteString`s to some particular
+type, let's capture this:
+
+```haskell
+-- | Custom error component for CSV parsing. It allows typed reporting of
+-- conversion errors.
+
+data Cec
+  = CecFail String
+  | CecIndentation Ordering Pos Pos
+  | CecConversionError String
+  deriving (Eq, Data, Typeable, Ord, Read, Show)
+
+instance ShowErrorComponent Cec where
+  showErrorComponent (CecFail msg) = msg
+  showErrorComponent (CecIndentation ord ref actual) =
+    "incorrect indentation (got " ++ show (unPos actual) ++
+    ", should be " ++ p ++ show (unPos ref) ++ ")"
+    where p = case ord of
+                LT -> "less than "
+                EQ -> "equal to "
+                GT -> "greater than "
+  showErrorComponent (CecConversionError msg) =
+    "conversion error: " ++ msg
+
+instance ErrorComponent Cec where
+  representFail        = CecFail
+  representIndentation = CecIndentation
+```
+
+We have re-used definitions from Megaparsec's source code for `Dec` here and
+added a special case represented by `CecConversionError`. It contains a
+`String` that conversion functions of Cassava return. We could do better if
+Cassava provided typed error values, but `String` is all we have, so let's
+work with it.
+
+Another handy definition we need is `Parser` type synonym. We cannot use one
+of the default `Parser` definitions because those assume `Dec`, so we define
+it ourselves rather trivially:
+
+```haskell
+-- | Parser type that uses “custom error component” 'Cec'.
+
+type Parser = Parsec Cec BL.ByteString
+```
 
 ## Top level API and helpers
 
-…
+As you can see we are going to parse lazy `ByteString`s here.
 
 ## The parser
 

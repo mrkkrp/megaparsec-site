@@ -1,7 +1,7 @@
 ---
 title: How to introduce custom error messages
 subtitle: With Megaparsec 5 it's possible to use user-defined data types as part of parse errors
-published: August  7, 2016
+published: August 10, 2016
 ---
 
 One of the advantages of Megaparsec 5 is the ability to use your own data
@@ -21,12 +21,12 @@ which is an alternative parser for the popular
 to parse CSV data. The default parser features not very user-friendly error
 messages, so I was asked to design a better one using Megaparsec 5.
 
-In addition to standard error messages, the library can report problems that
-have to do with using methods from `FromRecord` and `FromNamedRecord` type
-classes that describe how to transform a collection of `ByteString`s into a
-particular instance of those type classes. While performing the conversion,
-things may go wrong, and we would like to use a special data constructor in
-these cases.
+In addition to standard error messages (“expected” and “unexpected” tokens),
+the library can report problems that have to do with using methods from
+`FromRecord` and `FromNamedRecord` type classes that describe how to
+transform a collection of `ByteString`s into a particular instance of those
+type classes. While performing the conversion, things may go wrong, and we
+would like to use a special data constructor in these cases.
 
 The complete source code can be found in
 [this GitHub repository](https://github.com/stackbuilders/cassava-megaparsec).
@@ -147,8 +147,8 @@ that we need to think about in the vanilla Megaparsec:
   [`Text.Megaparsec.Lexer`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Lexer.html).
 
 What this means is that our new custom type should somehow provide a way to
-represent those things too. The requirement that a type should be capable to
-represent the above-mentioned exceptional situations is captured by the
+represent those things too. The requirement that a type should be capable of
+representing the above-mentioned exceptional situations is captured by the
 `ErrorComponent` type class:
 
 ```haskell
@@ -202,7 +202,7 @@ We will need to make our new data type instance of that class as well.
 
 So, let's start. We can grab existing definitions and instances of `Dec`
 data type and change them as necessary. The special case we want to support
-is about failed conversion from vectior of `ByteString`s to some particular
+is about failed conversion from vector of `ByteString`s to some particular
 type, let's capture this:
 
 ```haskell
@@ -250,11 +250,227 @@ type Parser = Parsec Cec BL.ByteString
 
 ## Top level API and helpers
 
-As you can see we are going to parse lazy `ByteString`s here.
+Let's start from the top and take a look at the top-level, public API:
+
+```haskell
+-- | Deserialize CSV records form a lazy 'BL.ByteString'. If this fails due
+-- to incomplete or invalid input, 'Left' is returned. Equivalent to
+-- 'decodeWith' 'defaultDecodeOptions'.
+
+decode :: FromRecord a
+  => HasHeader
+     -- ^ Whether the data contains header that should be skipped
+  -> FilePath
+     -- ^ File name (use empty string if you have none)
+  -> BL.ByteString
+     -- ^ CSV data
+  -> Either (ParseError Char Cec) (Vector a)
+decode = decodeWith defaultDecodeOptions
+
+-- | Like 'decode', but lets you customize how the CSV data is parsed.
+
+decodeWith :: FromRecord a
+  => DecodeOptions
+     -- ^ Decoding options
+  -> HasHeader
+     -- ^ Whether the data contains header that should be skipped
+  -> FilePath
+     -- ^ File name (use empty string if you have none)
+  -> BL.ByteString
+     -- ^ CSV data
+  -> Either (ParseError Char Cec) (Vector a)
+decodeWith = decodeWithC csv
+
+-- | Deserialize CSV records from a lazy 'BL.ByteString'. If this fails due
+-- to incomplete or invalid input, 'Left' is returned. The data is assumed
+-- to be preceded by a header. Equivalent to 'decodeByNameWith'
+-- 'defaultDecodeOptions'.
+
+decodeByName :: FromNamedRecord a
+  => FilePath          -- ^ File name (use empty string if you have none)
+  -> BL.ByteString     -- ^ CSV data
+  -> Either (ParseError Char Cec) (Header, Vector a)
+decodeByName = decodeByNameWith defaultDecodeOptions
+
+-- | Like 'decodeByName', but lets you customize how the CSV data is parsed.
+
+decodeByNameWith :: FromNamedRecord a
+  => DecodeOptions     -- ^ Decoding options
+  -> FilePath          -- ^ File name (use empty string if you have none)
+  -> BL.ByteString     -- ^ CSV data
+  -> Either (ParseError Char Cec) (Header, Vector a)
+decodeByNameWith opts = parse (csvWithHeader opts)
+
+-- | Decode CSV data using the provided parser, skipping a leading header if
+-- necessary.
+
+decodeWithC
+  :: (DecodeOptions -> Parser a)
+     -- ^ Parsing function parametrized by 'DecodeOptions'
+  -> DecodeOptions
+     -- ^ Decoding options
+  -> HasHeader
+     -- ^ Whether to expect a header in the input
+  -> FilePath
+     -- ^ File name (use empty string if you have none)
+  -> BL.ByteString
+     -- ^ CSV data
+  -> Either (ParseError Char Cec) a
+decodeWithC p opts@DecodeOptions {..} hasHeader = parse parser
+  where
+    parser = case hasHeader of
+      HasHeader -> header decDelimiter *> p opts
+      NoHeader  -> p opts
+```
+
+Really nothing interesting here, just a bunch of wrappers that boil down to
+running the `parser` either with skipping the CSV header or not.
+
+What I would really like to show to you is the helpers, because one of them
+is going to be very handy when you decide to write your own parser after
+reading this manual. Here are the helpers:
+
+```haskell
+-- | End parsing signaling a “conversion error”.
+
+conversionError :: String -> Parser a
+conversionError msg = failure S.empty S.empty (S.singleton err)
+  where
+    err = CecConversionError msg
+
+-- | Convert a 'Record' to a 'NamedRecord' by attaching column names. The
+-- 'Header' and 'Record' must be of the same length.
+
+toNamedRecord :: Header -> Record -> NamedRecord
+toNamedRecord hdr v = H.fromList . V.toList $ V.zip hdr v
+
+-- | Parse a byte of specified value and return unit.
+
+blindByte :: Word8 -> Parser ()
+blindByte = void . char . chr . fromIntegral
+```
+
+The `conversionError` is a handy thing to have as you can quickly fail with
+your custom error message without writing all the `failure`-related
+boilerplate. `toNamedRecord` just converts a `Record` to `NamedRecord`,
+while `blindByte` reads a character (passed to it as a `Word8` value) and
+returns a unit `()`.
 
 ## The parser
 
-…
+Let's start with parsing a field. A field in a CSV file can be either
+escaped or unescaped:
+
+```haskell
+-- | Parse a field. The field may be in either the escaped or non-escaped
+-- format. The returned value is unescaped.
+
+field :: Word8 -> Parser Field
+field del = label "field" (escapedField <|> unescapedField del)
+```
+
+An escaped field is written inside straight quotes `""` and can contain any
+characters at all, but the quote sign itself `"` must be escaped by
+repeating it twice:
+
+```haskell
+-- | Parse an escaped field.
+
+escapedField :: Parser ByteString
+escapedField =
+  BC8.pack <$!> between (char '"') (char '"') (many $ normalChar <|> escapedDq)
+  where
+    normalChar = noneOf "\"" <?> "unescaped character"
+    escapedDq  = label "escaped double-quote" ('"' <$ string "\"\"")
+```
+
+Simple so far. `unescapedField` is even simpler, it can contain any
+character except for the quote sign `"`, delimiter sign, and newline
+characters:
+
+```haskell
+-- | Parse an unescaped field.
+
+unescapedField :: Word8 -> Parser ByteString
+unescapedField del = BC8.pack <$!> many (noneOf es)
+  where
+    es = chr (fromIntegral del) : "\"\n\r"
+```
+
+To parse a record we have to parse non-empty collection of fields separated
+by delimiter characters (supplied from the `DecodeOptions` thing). Then we
+convert it to `Vector ByteString`, because that's what Cassava's conversion
+functions expect:
+
+```haskell
+-- | Parse a record, not including the terminating line separator. The
+-- terminating line separate is not included as the last record in a CSV
+-- file is allowed to not have a terminating line separator.
+
+record
+  :: Word8             -- ^ Field delimiter
+  -> (Record -> C.Parser a)
+     -- ^ How to “parse” record to get the data of interest
+  -> Parser a
+record del f = do
+  notFollowedBy eof -- to prevent reading empty line at the end of file
+  r <- V.fromList <$!> (sepBy1 (field del) (blindByte del) <?> "record")
+  case C.runParser (f r) of
+    Left msg -> conversionError msg
+    Right x  -> return x
+```
+
+The `(<$!>)` operator works just like the familiar `(<$>)`operator, but
+applies `V.fromList` strictly. Now that we have the vector of `ByteString`s,
+we can try to convert it: on success we just return the result, on failure
+we fail using the `conversionError` helper.
+
+The library also should handle CSV files with headers:
+
+```haskell
+-- | Parse a CSV file that includes a header.
+
+csvWithHeader :: FromNamedRecord a
+  => DecodeOptions     -- ^ Decoding options
+  -> Parser (Header, Vector a)
+     -- ^ The parser that parser collection of named records
+csvWithHeader !DecodeOptions {..} = do
+  !hdr <- header decDelimiter
+  let f = parseNamedRecord . toNamedRecord hdr
+  xs   <- sepEndBy1 (record decDelimiter f) eol
+  eof
+  return $ let !v = V.fromList xs in (hdr, v)
+
+-- | Parse a header, including the terminating line separator.
+
+header :: Word8 -> Parser Header
+header del = V.fromList <$!> p <* eol
+  where
+    p = sepBy1 (name del) (blindByte del) <?> "file header"
+
+-- | Parse a header name. Header names have the same format as regular
+-- 'field's.
+
+name :: Word8 -> Parser Name
+name del = field del <?> "name in header"
+```
+
+The code should be self-explanatory by now. The only thing that remains is
+to parse collection of records:
+
+```haskell
+-- | Parse a CSV file that does not include a header.
+
+csv :: FromRecord a
+  => DecodeOptions     -- ^ Decoding options
+  -> Parser (Vector a) -- ^ The parser that parses collection of records
+csv !DecodeOptions {..} = do
+  xs <- sepEndBy1 (record decDelimiter parseRecord) eol
+  eof
+  return $! V.fromList xs
+```
+
+Too simple!
 
 ## Conclusion
 

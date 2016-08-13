@@ -472,6 +472,31 @@ csv !DecodeOptions {..} = do
 
 Too simple!
 
+## Trying it out
+
+The custom error messages play seamlessly with the rest of the parser. Let's
+parse a CSV file into collection of `(String, Maybe Int, Double)` items. If
+I try to parse `"foo`, I get the usual Megaparsec error message with
+“unexpected” and “expected” parts:
+
+```
+my-file.csv:1:5:
+unexpected end of input
+expecting '"', escaped double-quote, or unescaped character
+```
+
+However, when that phase of parsing is passed successfully, as with
+`foo,12,boo` input, the conversion is attempted and its results are
+reported:
+
+```
+my-file.csv:1:11:
+conversion error: expected Double, got "boo" (Failed reading: takeWhile1)
+```
+
+(I wouldn't mind if `(Failed reading: takeWhile1)` part were omitted, but
+that's what Cassava's conversion methods are producing.)
+
 ## Conclusion
 
 I hope this walk-through has demonstrated that it's quite trivial to insert

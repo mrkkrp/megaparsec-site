@@ -48,7 +48,7 @@ opb ::= and | or
 opr ::= > | <
 ```
 
-Note that we have three groups of operators — arithmetic, booloan and
+Note that we have three groups of operators — arithmetic, boolean and
 relational ones.
 
 And now the definition of statements:
@@ -74,7 +74,7 @@ data BExpr = BoolConst Bool
              deriving (Show)
 ```
 
-Binary booloan operators:
+Binary boolean operators:
 
 ```haskell
 data BBinOp = And | Or deriving (Show)

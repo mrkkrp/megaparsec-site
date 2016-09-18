@@ -194,7 +194,7 @@ rws :: [String] -- list of reserved words
 rws = ["if","then","else","while","do","skip","true","false","not","and","or"]
 
 identifier :: Parser String
-identifier = lexeme (p >>= check)
+identifier = (lexeme . try) (p >>= check)
   where
     p       = (:) <$> letterChar <*> many alphaNumChar
     check x = if x `elem` rws
@@ -208,6 +208,11 @@ several characters where every one of them can be either letter or
 number. Once we have parsed such string, we check if it's in list of
 reserved words, fail with informative message if it is, and return the
 result otherwise.
+
+Note the use of `try` in `identifier`. This is necessary to backtrack to
+beginning of the identifier in cases when `fail` is executed. Otherwise
+things like `many identifier` would fail on such identifiers instead of just
+stopping.
 
 And that's it, we have just written lexer for our language, now we can start
 writing parser.

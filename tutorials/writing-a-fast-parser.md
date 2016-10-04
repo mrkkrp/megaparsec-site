@@ -12,7 +12,7 @@ thing when tuning performance).
 
 * If your parser uses monad stack instead of plain `Parsec` monad (which is
   a monad transformer over `Identity` too, but it's much more lightweight),
-  make sure you use at least version 5.0 of `transformers` library, and at
+  make sure you use at least version 0.5 of `transformers` library, and at
   least version 5.0 of `megaparsec`. Both libraries have critical
   performance improvements in those versions, so you can just get better
   performance for free.

@@ -5,9 +5,9 @@ published: May 14, 2015
 ---
 
 This tutorial will present how to parse a subset of a simple imperative
-programming language called *WHILE* (introduced in a book “Principles of
+programming language called *WHILE* (introduced in the book “Principles of
 Program Analysis” by Nielson, Nielson and Hankin). It includes only a few
-statements and basic boolean/arithmetic expressions, which makes it a nice
+statements and basic boolean/arithmetic expressions, which makes it nice
 material for a tutorial.
 
 1. [Imports](#imports)
@@ -58,8 +58,8 @@ S ::= x := a | skip | S1; S2 | ( S ) | if b then S1 else S2 | while b do S
 ```
 
 We probably want to parse that into some internal representation of the
-language (abstract syntax tree). Therefore we need to define the data
-structures for the expressions and statements.
+language (an [abstract syntax tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree)).
+Therefore we need to define the data structures for the expressions and statements.
 
 ## Data structures
 
@@ -118,9 +118,9 @@ data Stmt = Seq [Stmt]
 
 ## Lexer
 
-Having all the data structures we can go on with writing the code to do
+Having all the data structures we can go on with writing the code to do the
 actual parsing. Here we will define *lexemes* of our language. When writing
-lexer for a language it's always important to define what counts as
+a lexer for a language it's always important to define what counts as
 whitespace and how it should be consumed. `space` from
 `Text.Megaparsec.Lexer` module can be helpful here:
 
@@ -131,14 +131,14 @@ sc = L.space (void spaceChar) lineCmnt blockCmnt
         blockCmnt = L.skipBlockComment "/*" "*/"
 ```
 
-`sc` stands for “space consumer”. `space` takes three arguments: parser that
-parses single whitespace character, parser for line comments, and parser for
-block (multi-line) comments. `skipLineComment` and `skipBlockComment` help
-quickly create parsers to consume the comments. (If our language didn't have
-block comments, we could pass `empty` as third argument of `space`.)
+`sc` stands for “space consumer”. `space` takes three arguments: a parser that
+parses single whitespace character, a parser for line comments, and a parser for
+block (multi-line) comments. `skipLineComment` and `skipBlockComment` help with
+quickly creating parsers to consume the comments. (If our language didn't have
+block comments, we could pass `empty` as the third argument of `space`.)
 
-Next, we will use strategy where whitespace will be consumed *after* every
-lexeme automatically, but no before it. Let's define a wrapper to achieve
+Next, we will use a strategy where whitespace will be consumed *after* every
+lexeme automatically, but not before it. Let's define a wrapper to achieve
 this:
 
 ```haskell
@@ -146,9 +146,11 @@ lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
 ```
 
-Perfect. Now we can wrap any parser in `lexeme` and it will consume trailing
-whitespace with `sc`. Since we often want to parse some “fixed” string,
-let's define one more parser called `symbol`. This will take string as
+Perfect. Now we can wrap any parser in `lexeme` and it will consume any trailing
+whitespace with `sc`.
+
+Since we often want to parse some “fixed” string,
+let's define one more parser called `symbol`. It will take a string as
 argument and parse this string and whitespace after it.
 
 ```haskell
@@ -202,7 +204,7 @@ identifier = (lexeme . try) (p >>= check)
                 else return x
 ```
 
-`identifier` may seem complex, but it's really simple. We just parse
+`identifier` may seem complex, but it's really simple. We just parse a
 sequence of characters where first character is a letter and the rest is
 several characters where every one of them can be either letter or
 number. Once we have parsed such string, we check if it's in list of
@@ -219,7 +221,7 @@ writing parser.
 
 ## Parser
 
-As already mentioned a program in this language is simply a statement, so
+As already mentioned, a program in this language is simply a statement, so
 the main parser should basically only parse a statement. But remember to
 take care of initial whitespace — our parsers only get rid of whitespace
 after the tokens!
@@ -231,8 +233,8 @@ whileParser = sc *> stmt <* eof
 
 Now because any statement might be actually a sequence of statements
 separated by semicolon, we use `sepBy1` to parse at least one statement. The
-result is a list of statements. We also allow grouping statements by the
-parenthesis, which is useful, for instance, in the `while` loop.
+result is a list of statements. We also allow grouping statements by
+parentheses, which is useful, for instance, in the `while` loop.
 
 ```haskell
 stmt :: Parser Stmt
@@ -256,7 +258,7 @@ stmt' = ifStmt <|> whileStmt <|> skipStmt <|> assignStmt
 ```
 
 If you have a parser that might fail after consuming some input, and you
-still want to try the next parser, you should look into `try`
+still want to try the next parser, you should take a look at the `try`
 combinator. For instance `try p <|> q` will try parsing with `p` and if it
 fails, even after consuming the input, the `q` parser will be used as if
 nothing has been consumed by `p`.
@@ -373,8 +375,8 @@ relation =  (symbol ">" *> pure Greater)
         <|> (symbol "<" *> pure Less)
 ```
 
-And that's it. We have a quite simple parser able to parse a few statements
-and arithmetic/boolean expressions.
+And that's it. We have a quite simple parser which is able to parse
+a few statements and arithmetic/boolean expressions.
 
 ## Notes
 

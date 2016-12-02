@@ -35,12 +35,22 @@
 import Data.Monoid ((<>))
 import Hakyll
 
+----------------------------------------------------------------------------
+-- Constants
+
 menu :: [(String, String)]
 menu =
   [ ("Tutorials", "/tutorials.html")
   , ("Hackage",   "https://hackage.haskell.org/package/megaparsec")
   , ("GitHub",    "https://github.com/mrkkrp/megaparsec")
   ]
+
+tutorialCode :: String
+tutorialCode =
+  "https://github.com/mrkkrp/megaparsec-site/tree/master/tutorial-code/"
+
+----------------------------------------------------------------------------
+-- Main
 
 main :: IO ()
 main = hakyll $ do
@@ -56,8 +66,8 @@ main = hakyll $ do
   match "tutorials/*" $ do
     route $ setExtension "html"
     compile $ pandocCompiler
-      >>= loadAndApplyTemplate "templates/tutorial.html" datedContext
-      >>= loadAndApplyTemplate "templates/default.html"  datedContext
+      >>= loadAndApplyTemplate "templates/tutorial.html" tutorialContext
+      >>= loadAndApplyTemplate "templates/default.html"  tutorialContext
       >>= relativizeUrls
 
   create ["tutorials.html"] $ do
@@ -87,8 +97,18 @@ main = hakyll $ do
 
   match "templates/*" $ compile templateCompiler
 
+----------------------------------------------------------------------------
+-- Contexts
+
 datedContext :: Context String
 datedContext = dateField "date" "%B %e, %Y" <> menuContext
+
+tutorialContext :: Context String
+tutorialContext = codeLink <> datedContext
+  where
+    codeLink = field "code-link" $ \item -> do
+      file <- getMetadataField' (itemIdentifier item) "code"
+      return (tutorialCode <> file)
 
 menuContext :: Context String
 menuContext = listField "menu-items" iContext (return is) <> defaultContext

@@ -6,7 +6,7 @@ published: May 14, 2016
 
 Megaparsec 4.3.0 introduces new combinators that should be of some use when
 you want to parse indentation-sensitive input. Megaparsec 5.0.0 adds support
-for line-folds completing support for indentation-sensitive parsing. This
+for line-folds, completing support for indentation-sensitive parsing. This
 tutorial shows how these new tools work, compose, and hopefully, *feel
 natural* — something we cannot say about ad-hoc solutions to this problem
 that exist as separate packages to work on top of Parsec, for example.
@@ -19,10 +19,10 @@ that exist as separate packages to work on top of Parsec, for example.
 
 ## Combinator overview
 
-From the first release of Megaparsec, there has been `indentGuard` thing,
-which is a great shortcut, but kind of pain to use for complex tasks. So, we
-won't cover it here, instead we will talk about new combinators built upon
-it and available beginning from Megaparsec 4.3.0.
+From the first release of Megaparsec, there has been the `indentGuard`
+function, which is a great shortcut, but kind of pain to use for complex
+tasks. So, we won't cover it here, instead we will talk about the new
+combinators built upon it and available beginning from Megaparsec 4.3.0.
 
 First, we have `indentLevel`, which is defined just as:
 
@@ -32,11 +32,10 @@ indentLevel = sourceColumn <$> getPosition
 ```
 
 That's right, it's just a shortcut, but I found myself using this idiom so
-often, so I defined this.
+often, so I included it in the public lexer API.
 
 Second, we have `nonIndented`. This allows to make sure that some input is
-not indented, just wrap parser for that input in `nonIndented` and you're
-done.
+not indented. Just wrap a parser in `nonIndented` and you're done.
 
 `nonIndented` is trivial to write as well:
 
@@ -48,21 +47,21 @@ nonIndented :: MonadParsec e s m
 nonIndented sc p = indentGuard sc EQ (unsafePos 1) *> p
 ```
 
-However, it's a part of implementation of logical model behind high-level
-parsing of indentation-sensitive input. What is this model? We state that
-there are top-level items that are not indented (`nonIndented` helps to
-define parsers for them), and all indented tokens are directly or indirectly
-are “children” of those top-level definitions. In Megaparsec, we don't need
-any additional state to express this. Since all indentation is always
-relative, our idea is to explicitly tie parsers for “reference” tokens and
-indented tokens, thus defining indentation-sensitive grammar via pure
-combination of parsers, just like all the other tools in Megaparsec
-work. This is different from old solutions built on top of Parsec, where you
-had to deal with ad-hoc state. It's also more robust and safer, because the
-less state you have, the better.
+However, it's a part of a logical model behind high-level parsing of
+indentation-sensitive input. What is this model? We state that there are
+top-level items that are not indented (`nonIndented` helps to define parsers
+for them), and all indented tokens are directly or indirectly are “children”
+of those top-level definitions. In Megaparsec, we don't need any additional
+state to express this. Since all indentation is always relative, our idea is
+to explicitly tie parsers for “reference” tokens and indented tokens, thus
+defining indentation-sensitive grammar via pure combination of parsers, just
+like all the other tools in Megaparsec work. This is different from old
+solutions built on top of Parsec, where you had to deal with ad-hoc state.
+It's also more robust and safer, because the less state you have, the
+better.
 
-So, how do you define indented block? `indentBlock` should handle this
-easily. Let's take a look at its signature:
+So, how do you define indented block? Let's take a look at the signature of
+the `indentBlock` helper:
 
 ```haskell
 indentBlock :: (MonadParsec e s m, Token s ~ Char)
@@ -71,10 +70,10 @@ indentBlock :: (MonadParsec e s m, Token s ~ Char)
   -> m a
 ```
 
-Here we specify how to consume indentation. Important thing to note is that
-this space-consuming parser *must* consume newlines as well, while tokens
-(“reference” token and indented tokens) should not normally consume newlines
-after them.
+First, we specify how to consume indentation. An important thing to note
+here is that this space-consuming parser *must* consume newlines as well,
+while tokens (“reference” token and indented tokens) should not normally
+consume newlines after them.
 
 As you can see, the second argument allows us to parse “reference” token and
 return a data structure that tells `indentBlock` what to do next. There are
@@ -88,7 +87,7 @@ data IndentOpt m a b
     -- ^ Parse many indented tokens (possibly zero), use given indentation
     -- level (if 'Nothing', use level of the first indented token); the
     -- second argument tells how to get final result, and third argument
-    -- describes how to parse indented token
+    -- describes how to parse an indented token
   | IndentSome (Maybe Int) ([b] -> m a) (m b)
     -- ^ Just like 'IndentMany', but requires at least one indented token to
     -- be present
@@ -103,7 +102,7 @@ should be flexible enough.
 ## Parsing simple indented list
 
 Now it's time to put our new tools into practice. In this section, we will
-parse simple indented list of some items. Let's begin with import section:
+parse a simple indented list of some items. Let's begin with import section:
 
 ```haskell
 {-# LANGUAGE TupleSections #-}
@@ -117,8 +116,8 @@ import Text.Megaparsec.String
 import qualified Text.Megaparsec.Lexer as L
 ```
 
-We will need two kinds of space-consumers, one that consumes new lines `sc`
-and one that doesn't `sc'` (actually it only parses spaces and tabs here):
+We will need two kinds of space-consumers, one that consumes new lines `scn`
+and one that doesn't `sc` (actually it only parses spaces and tabs here):
 
 ```haskell
 lineComment :: Parser ()
@@ -243,7 +242,7 @@ parser, `pComplexItem` (looks familiar…):
 
 ```haskell
 pComplexItem :: Parser (String, [String])
-pComplexItem = L.indentBlock sc p
+pComplexItem = L.indentBlock scn p
   where
     p = do
       header <- pItem
@@ -315,7 +314,7 @@ pLineFold = L.lineFold scn $ \sc' ->
 
 `lineFold` works like this: you give it space consumer that accepts newlines
 and it gives you special space consumer that you can use in callback to
-consume space between elements of line fold. Important thing here is that
+consume space between elements of line fold. An important thing here is that
 you should use normal space consumer at the end of line fold or your fold
 will have no end.
 
@@ -327,8 +326,7 @@ space between them.
 ## Conclusion
 
 Note that every sub-list behaves independently — you will see that if you
-try to feed the parser with various variants of malformed data (that's kind
-of exercise for the reader). And this is no surprise, since no state is
-shared between different parts of the structure — it's just assembled purely
-from simpler parts — sufficiently elegant solution in the spirit of the rest
-of the library.
+try to feed the parser with various variants of malformed data. And this is
+no surprise, since no state is shared between different parts of the
+structure — it's just assembled purely from simpler parts — sufficiently
+elegant solution in the spirit of the rest of the library.

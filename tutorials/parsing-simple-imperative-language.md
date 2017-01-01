@@ -1,7 +1,7 @@
 ---
 title: Parsing a simple imperative language
 subtitle: Based on original Parsec tutorial
-published: May 14, 2015
+published: January 1, 2017
 ---
 
 This tutorial will present how to parse a subset of a simple imperative
@@ -20,15 +20,11 @@ material for a tutorial.
 
 ## Imports
 
-First let's specify the name of the module:
+First let's import the necessary libraries:
 
 ```haskell
-module ParseWhile where
-```
+module Main (main) where
 
-And then import the necessary libraries:
-
-```haskell
 import Control.Monad (void)
 import Text.Megaparsec
 import Text.Megaparsec.Expr
@@ -67,11 +63,12 @@ We need to take care of boolean and arithmetic expressions and the
 appropriate operators. First let's look at the boolean expressions:
 
 ```haskell
-data BExpr = BoolConst Bool
-           | Not BExpr
-           | BBinary BBinOp BExpr BExpr
-           | RBinary RBinOp AExpr AExpr
-             deriving (Show)
+data BExpr
+  = BoolConst Bool
+  | Not BExpr
+  | BBinary BBinOp BExpr BExpr
+  | RBinary RBinOp AExpr AExpr
+  deriving (Show)
 ```
 
 Binary boolean operators:
@@ -79,6 +76,7 @@ Binary boolean operators:
 ```haskell
 data BBinOp = And | Or deriving (Show)
 ```
+
 Relational operators:
 
 ```haskell
@@ -88,32 +86,35 @@ data RBinOp = Greater | Less deriving (Show)
 Now we define the types for arithmetic expressions:
 
 ```haskell
-data AExpr = Var String
-           | IntConst Integer
-           | Neg AExpr
-           | ABinary ABinOp AExpr AExpr
-             deriving (Show)
+data AExpr
+  = Var String
+  | IntConst Integer
+  | Neg AExpr
+  | ABinary ABinOp AExpr AExpr
+  deriving (Show)
 ```
 
 And arithmetic operators:
 
 ```haskell
-data ABinOp = Add
-            | Subtract
-            | Multiply
-            | Divide
-              deriving (Show)
+data ABinOp
+  = Add
+  | Subtract
+  | Multiply
+  | Divide
+  deriving (Show)
 ```
 
 Finally let's take care of the statements:
 
 ```haskell
-data Stmt = Seq [Stmt]
-          | Assign String AExpr
-          | If BExpr Stmt Stmt
-          | While BExpr Stmt
-          | Skip
-            deriving (Show)
+data Stmt
+  = Seq [Stmt]
+  | Assign String AExpr
+  | If BExpr Stmt Stmt
+  | While BExpr Stmt
+  | Skip
+  deriving (Show)
 ```
 
 ## Lexer
@@ -131,11 +132,12 @@ sc = L.space (void spaceChar) lineCmnt blockCmnt
         blockCmnt = L.skipBlockComment "/*" "*/"
 ```
 
-`sc` stands for “space consumer”. `space` takes three arguments: a parser that
-parses single whitespace character, a parser for line comments, and a parser for
-block (multi-line) comments. `skipLineComment` and `skipBlockComment` help with
-quickly creating parsers to consume the comments. (If our language didn't have
-block comments, we could pass `empty` as the third argument of `space`.)
+`sc` stands for “space consumer”. `space` takes three arguments: a parser
+that parses single whitespace character, a parser for line comments, and a
+parser for block (multi-line) comments. `skipLineComment` and
+`skipBlockComment` help with quickly creating parsers to consume the
+comments. (If our language didn't have block comments, we could pass `empty`
+as the third argument of `space`.)
 
 Next, we will use a strategy where whitespace will be consumed *after* every
 lexeme automatically, but not before it. Let's define a wrapper to achieve
@@ -146,12 +148,12 @@ lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
 ```
 
-Perfect. Now we can wrap any parser in `lexeme` and it will consume any trailing
-whitespace with `sc`.
+Perfect. Now we can wrap any parser in `lexeme` and it will consume any
+trailing whitespace with `sc`.
 
-Since we often want to parse some “fixed” string,
-let's define one more parser called `symbol`. It will take a string as
-argument and parse this string and whitespace after it.
+Since we often want to parse some “fixed” string, let's define one more
+parser called `symbol`. It will take a string as argument and parse this
+string and whitespace after it.
 
 ```haskell
 symbol :: String -> Parser String
@@ -204,15 +206,14 @@ identifier = (lexeme . try) (p >>= check)
                 else return x
 ```
 
-`identifier` may seem complex, but it's really simple. We just parse a
+`identifier` may seem complex, but it's actually simple. We just parse a
 sequence of characters where first character is a letter and the rest is
-several characters where every one of them can be either letter or
-number. Once we have parsed such string, we check if it's in list of
-reserved words, fail with informative message if it is, and return the
-result otherwise.
+several characters where every one of them can be either letter or number.
+Once we have parsed such string, we check if it's in list of reserved words,
+fail with informative message if it is, and return the result otherwise.
 
 Note the use of `try` in `identifier`. This is necessary to backtrack to
-beginning of the identifier in cases when `fail` is executed. Otherwise
+beginning of the identifier in cases when `fail` is evaluated. Otherwise
 things like `many identifier` would fail on such identifiers instead of just
 stopping.
 
@@ -224,11 +225,11 @@ writing parser.
 As already mentioned, a program in this language is simply a statement, so
 the main parser should basically only parse a statement. But remember to
 take care of initial whitespace — our parsers only get rid of whitespace
-after the tokens!
+*after* the tokens!
 
 ```haskell
 whileParser :: Parser Stmt
-whileParser = sc *> stmt <* eof
+whileParser = between sc eof stmt
 ```
 
 Now because any statement might be actually a sequence of statements
@@ -269,29 +270,29 @@ the necessary information to create appropriate data structures.
 
 ```haskell
 ifStmt :: Parser Stmt
-ifStmt =
-  do rword "if"
-     cond  <- bExpr
-     rword "then"
-     stmt1 <- stmt
-     rword "else"
-     stmt2 <- stmt
-     return $ If cond stmt1 stmt2
+ifStmt = do
+  rword "if"
+  cond  <- bExpr
+  rword "then"
+  stmt1 <- stmt
+  rword "else"
+  stmt2 <- stmt
+  return (If cond stmt1 stmt2)
 
 whileStmt :: Parser Stmt
-whileStmt =
-  do rword "while"
-     cond <- bExpr
-     rword "do"
-     stmt1 <- stmt
-     return $ While cond stmt1
+whileStmt = do
+  rword "while"
+  cond <- bExpr
+  rword "do"
+  stmt1 <- stmt
+  return (While cond stmt1)
 
 assignStmt :: Parser Stmt
-assignStmt =
-  do var  <- identifier
-     void $ symbol ":="
-     expr <- aExpr
-     return $ Assign var expr
+assignStmt = do
+  var  <- identifier
+  void (symbol ":=")
+  expr <- aExpr
+  return (Assign var expr)
 
 skipStmt :: Parser Stmt
 skipStmt = Skip <$ rword "skip"
@@ -299,9 +300,8 @@ skipStmt = Skip <$ rword "skip"
 
 ## Expressions
 
-What's left is to parse the expressions. Fortunately Megaparsec provides a
-very easy way to do that. Let's define the arithmetic and boolean
-expressions:
+What's left is to parse the expressions. Fortunately Megaparsec provides an
+easy way to do that. Let's define the arithmetic and boolean expressions:
 
 ```haskell
 aExpr :: Parser AExpr
@@ -317,18 +317,18 @@ what constructors to use in each case.
 ```haskell
 aOperators :: [[Operator Parser AExpr]]
 aOperators =
-  [ [Prefix (symbol "-" *> pure Neg) ]
-  , [ InfixL (symbol "*" *> pure (ABinary Multiply))
-    , InfixL (symbol "/" *> pure (ABinary Divide)) ]
-  , [ InfixL (symbol "+" *> pure (ABinary Add))
-    , InfixL (symbol "-" *> pure (ABinary Subtract)) ]
+  [ [Prefix (Neg <$ symbol "-") ]
+  , [ InfixL (ABinary Multiply <$ symbol "*")
+    , InfixL (ABinary Divide   <$ symbol "/") ]
+  , [ InfixL (ABinary Add      <$ symbol "+")
+    , InfixL (ABinary Subtract <$ symbol "-") ]
   ]
 
 bOperators :: [[Operator Parser BExpr]]
 bOperators =
-  [ [Prefix (rword "not" *> pure Not) ]
-  , [InfixL (rword "and" *> pure (BBinary And))
-    , InfixL (rword "or" *> pure (BBinary Or)) ]
+  [ [Prefix (Not <$ rword "not") ]
+  , [InfixL (BBinary And <$ rword "and")
+    , InfixL (BBinary Or <$ rword "or") ]
   ]
 ```
 
@@ -344,8 +344,8 @@ is quite simple:
 ```haskell
 aTerm :: Parser AExpr
 aTerm = parens aExpr
-     <|> Var      <$> identifier
-     <|> IntConst <$> integer
+  <|> Var      <$> identifier
+  <|> IntConst <$> integer
 ```
 
 However, the term in a boolean expression is a bit more tricky. In this
@@ -355,28 +355,28 @@ of arithmetic expressions.
 ```haskell
 bTerm :: Parser BExpr
 bTerm =  parens bExpr
-     <|> (rword "true"  *> pure (BoolConst True))
-     <|> (rword "false" *> pure (BoolConst False))
-     <|> rExpr
+  <|> (rword "true"  *> pure (BoolConst True))
+  <|> (rword "false" *> pure (BoolConst False))
+  <|> rExpr
 ```
 
 Therefore we have to define a parser for relational expressions:
 
 ```haskell
 rExpr :: Parser BExpr
-rExpr =
-  do a1 <- aExpr
-     op <- relation
-     a2 <- aExpr
-     return $ RBinary op a1 a2
+rExpr = do
+  a1 <- aExpr
+  op <- relation
+  a2 <- aExpr
+  return (RBinary op a1 a2)
 
 relation :: Parser RBinOp
-relation =  (symbol ">" *> pure Greater)
-        <|> (symbol "<" *> pure Less)
+relation = (symbol ">" *> pure Greater)
+  <|> (symbol "<" *> pure Less)
 ```
 
-And that's it. We have a quite simple parser which is able to parse
-a few statements and arithmetic/boolean expressions.
+And that's it. We have a quite simple parser which is able to parse a few
+statements and arithmetic/boolean expressions.
 
 ## Notes
 
@@ -385,9 +385,6 @@ be handy:
 
 * `parseTest p input` applies parser `p` on input `input` and prints
   results.
-
-* `parseFromFile p filename` applies parser `p` on contents of file
-  `filename`.
 
 ----
 

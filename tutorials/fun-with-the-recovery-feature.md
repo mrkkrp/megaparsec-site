@@ -1,7 +1,7 @@
 ---
 title: Fun with the recovery feature
 subtitle: Megaparsec has grown even more powerful in version 4.4.0
-published: May 14, 2016
+published: January 1, 2017
 ---
 
 Megaparsec 4.4.0 is a major improvement of the library. Among other things,
@@ -28,10 +28,10 @@ x = 3 * (1 + y)
 result = x - 1 # answer is 32
 ```
 
-Something like that. Here, it can only calculate arithmetic expressions, but
-if we were to design something more powerful, we could introduce more
-interesting operators to grab input from console, etc., but since our aim is
-to explore new parsing feature, this language will do.
+Here, it can only calculate arithmetic expressions, but if we were to design
+something more powerful, we could introduce more interesting operators to
+grab input from console, etc., but since our aim is to explore new parsing
+feature, this language will do.
 
 First, we will write parser that can parse entire program in this language
 as list of ASTs representing equations. Then we will make it
@@ -75,10 +75,9 @@ data Expr
   deriving (Eq, Show)
 ```
 
-↑ Here, it's now obvious that a program in our language is collection of
-equations, where every equation gives name to expression which in turn can
-be simply a number, reference to other equation, or some math involving
-those concepts.
+It's obvious that a program in our language is collection of equations,
+where every equation gives name to expression which in turn can be simply a
+number, reference to other equation, or some math involving those concepts.
 
 As usual, first thing that we need to handle when starting a parser is white
 space. We will have two space-consuming parsers:
@@ -168,7 +167,7 @@ Sum
   (Multiplication (Value 7.0) (Reference "z"))
 ```
 
-Power! The only thing that remains is parser for entire equations and parser
+Power! The only thing that remains is a parser for equations and a parser
 for entire program:
 
 ```haskell
@@ -189,8 +188,8 @@ return what it has parsed so far.
 ## Making use of the recovery feature
 
 Our parser is really dandy, it has nice error messages and does its job
-really well. However, every expression is clearly separated from the others
-by a newline. This separation makes it possible to analyze many expressions
+well. However, every expression is clearly separated from the others by a
+newline. This separation makes it possible to analyze many expressions
 independently, even if one of them is malformed, we have no reason to stop
 and not to check the others. In fact, that's how some “serious” parsers work
 (parser of C++ language, although it depends on compiler I guess). Reporting
@@ -206,7 +205,7 @@ Let's add one more type synonym — `RawData`:
 type RawData t e = [Either (ParseError t e) Equation]
 ```
 
-This will represent collection of equations, just like `Program`, but every
+This represents a collection of equations, just like `Program`, but every
 one of them may be malformed: in that case we get original error message in
 `Left`, otherwise we have properly parsed equation in `Right`.
 

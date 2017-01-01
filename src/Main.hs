@@ -1,7 +1,7 @@
 --
--- Web-site of Megaparsec project.
+-- Web-site of the Megaparsec project.
 --
--- Copyright © 2015 Megaparsec contributors
+-- Copyright © 2015–2017 Megaparsec contributors
 --
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are

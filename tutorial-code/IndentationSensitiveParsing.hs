@@ -33,7 +33,7 @@ pComplexItem = L.indentBlock scn p
 pLineFold :: Parser String
 pLineFold = L.lineFold scn $ \sc' ->
   let ps = some (alphaNumChar <|> char '-') `sepBy1` try sc'
-  in unwords <$> ps <* scn
+  in unwords <$> ps <* sc
 
 pItemList :: Parser (String, [(String, [String])])
 pItemList = L.nonIndented scn (L.indentBlock scn p)

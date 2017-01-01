@@ -310,7 +310,7 @@ pComplexItem = L.indentBlock scn p
 pLineFold :: Parser String
 pLineFold = L.lineFold scn $ \sc' ->
   let ps = some (alphaNumChar <|> char '-') `sepBy1` try sc'
-  in unwords <$> ps <* scn
+  in unwords <$> ps <* sc
 ```
 
 `lineFold` works like this: you give it space consumer that accepts newlines

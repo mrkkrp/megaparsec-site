@@ -40,9 +40,10 @@ import Hakyll
 
 menu :: [(String, String)]
 menu =
-  [ ("Tutorials", "/tutorials.html")
-  , ("Hackage",   "https://hackage.haskell.org/package/megaparsec")
-  , ("GitHub",    "https://github.com/mrkkrp/megaparsec")
+  [ ("Tutorials",     "/tutorials.html")
+  , ("Hackage",       "https://hackage.haskell.org/package/megaparsec")
+  , ("GitHub",        "https://github.com/mrkkrp/megaparsec")
+  , ("Edit the site", "https://github.com/mrkkrp/megaparsec-site")
   ]
 
 tutorialCode :: String

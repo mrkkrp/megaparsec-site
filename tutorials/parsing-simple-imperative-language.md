@@ -138,7 +138,7 @@ that parses single whitespace character, a parser for line comments, and a
 parser for block (multi-line) comments. `skipLineComment` and
 `skipBlockComment` help with quickly creating parsers to consume the
 comments. (If our language didn't have block comments, we could pass `empty`
-as the third argument of `space`.)
+from `Control.Applicative` as the third argument of `space`.)
 
 Next, we will use a strategy where whitespace will be consumed *after* every
 lexeme automatically, but not before it. Let's define a wrapper to achieve

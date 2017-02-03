@@ -1,6 +1,6 @@
 ---
 title: Fun with the recovery feature
-subtitle: Megaparsec has grown even more powerful in version 4.4.0
+subtitle: Skip errors and report multiple errors at once
 published: January 1, 2017
 code: RecoveryFeature.hs
 difficulty: 3

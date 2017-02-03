@@ -2,6 +2,7 @@
 title: How to introduce custom error messages
 subtitle: With Megaparsec 5 it's possible to use user-defined data types as part of parse errors
 published: August 10, 2016
+difficulty: 3
 ---
 
 One of the advantages of Megaparsec 5 is the ability to use your own data

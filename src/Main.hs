@@ -32,7 +32,10 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
+import Control.Monad
+import Data.List (sortBy)
 import Data.Monoid ((<>))
+import Data.Ord (comparing)
 import Hakyll
 
 ----------------------------------------------------------------------------
@@ -74,7 +77,7 @@ main = hakyll $ do
   create ["tutorials.html"] $ do
     route idRoute
     compile $ do
-      ts <- recentFirst =<< loadAll "tutorials/*"
+      ts <- easyFirst =<< loadAll "tutorials/*"
       let tutorialsContext =
             listField "tutorials" datedContext (return ts) <>
             constField "title" "Tutorials" <>
@@ -116,3 +119,12 @@ menuContext = listField "menu-items" iContext (return is) <> defaultContext
   where is = Item "item" <$> menu
         iContext = field "item-title" (return . fst . itemBody) <>
                    field "item-url"   (return . snd . itemBody)
+
+----------------------------------------------------------------------------
+-- Helpers
+
+easyFirst :: MonadMetadata m => [Item a] -> m [Item a]
+easyFirst xs =
+  fmap snd . sortBy (comparing fst) <$> forM xs (\x -> do
+    d <- getMetadataField' (itemIdentifier x) "difficulty"
+    return (d, x))

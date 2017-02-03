@@ -3,6 +3,7 @@ title: Indentation-sensitive parsing
 subtitle: Native, composable solution
 published: December 2, 2016
 code: IndentationSensitiveParsing.hs
+difficulty: 3
 ---
 
 Megaparsec 4.3.0 introduces new combinators that should be of some use when

@@ -2,6 +2,7 @@
 title: Writing a fast parser
 subtitle: Practical recommendations
 published: September 11, 2016
+difficulty: 4
 ---
 
 If performance of your Megaparsec parser is worse that you hoped, there may

@@ -3,6 +3,7 @@ title: Parsing a simple imperative language
 subtitle: Based on original Parsec tutorial
 published: January 1, 2017
 code: ParsingWhile.hs
+difficulty: 2
 ---
 
 This tutorial will present how to parse a subset of a simple imperative

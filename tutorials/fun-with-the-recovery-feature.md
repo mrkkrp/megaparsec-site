@@ -3,6 +3,7 @@ title: Fun with the recovery feature
 subtitle: Megaparsec has grown even more powerful in version 4.4.0
 published: January 1, 2017
 code: RecoveryFeature.hs
+difficulty: 3
 ---
 
 Megaparsec 4.4.0 is a major improvement of the library. Among other things,

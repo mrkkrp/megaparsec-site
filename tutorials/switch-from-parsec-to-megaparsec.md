@@ -2,6 +2,7 @@
 title: Switch from Parsec to Megaparsec
 subtitle: Practical recommendations
 published: May 14, 2016
+difficulty: 4
 ---
 
 Some progressive Haskell hackers may wish to switch from Parsec to

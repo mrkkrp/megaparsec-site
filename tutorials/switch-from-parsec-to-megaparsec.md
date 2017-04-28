@@ -6,10 +6,10 @@ difficulty: 4
 ---
 
 Some progressive Haskell hackers may wish to switch from Parsec to
-Megaparsec. This tutorial explains practical differences between the two
+Megaparsec. This tutorial explains the practical differences between the two
 libraries that you will need to address if you choose to undertake the
 switch. Remember, all the functionality available in Parsec is available in
-Megaparsec and often in better form.
+Megaparsec and often in a better form.
 
 1. [Imports](#imports)
 2. [Renamed things](#renamed-things)
@@ -47,12 +47,13 @@ import qualified Text.Megaparsec.Lexer as L
 
 So, the only noticeable difference that Megaparsec has no
 `Text.Megaparsec.Token` module which is replaced with
-`Text.Megaparsec.Lexer`, see about this in section
+`Text.Megaparsec.Lexer`, see about this in
+section
 [“What happened to `Text.Parsec.Token`”](#what-happened-to-text.parsec.token).
 
 ## Renamed things
 
-Megaparsec introduces more consistent naming scheme, so some things are
+Megaparsec introduces a more consistent naming scheme, so some things are
 called differently, but renaming functions is a very easy task, you don't
 need to think. Here are renamed items:
 
@@ -72,9 +73,14 @@ Character parsing:
 * `letter` → `letterChar`
 * `lower` → `lowerChar`
 * `octDigit` → `octDigitChar`
-* `space` → `spaceChar`
-* `spaces` → `space`
+* `space` → `spaceChar` †
+* `spaces` → `space` †
 * `upper` → `upperChar`
+
+† — pay attention to these, since `space` parses *many* `spaceChar`s,
+including zero, if you write something like `many space`, your parser will
+hang. So be careful to replace `many space` with either `many spaceChar` or
+`spaces`.
 
 ## Removed things
 
@@ -118,15 +124,15 @@ like the fact that we have well-typed and extensible error messages now.
 * Note that argument order of `label` has been flipped (the label itself
   goes first now), so you can write now: `myParser = label "my parser" $ …`.
 
-* Don't use `label ""` (or `… <?> ""`) idiom to “hide” some “expected”
-  tokens from error messages, use `hidden`.
+* Don't use the `label ""` (or the `… <?> ""`) idiom to “hide” some
+  “expected” tokens from error messages, use `hidden`.
 
 * New `token` parser is more powerful, its first argument provides full
   control over reported error message while its second argument allows to
   specify how to report missing token in case of empty input stream.
 
 * Now `tokens` parser allows to control how tokens are compared (yes, we
-  have case-insensitive `string`).
+  have case-insensitive `string` called `string'`).
 
 * The `unexpected` parser allows to specify precisely what is unexpected in
   well-typed manner.
@@ -138,19 +144,18 @@ like the fact that we have well-typed and extensible error messages now.
   properly (in Parsec `Expect "foo"` is equal to `Expect "bar"`), error
   messages are also well-typed and customizeable.
 
-* To render error message in custom way, call `parseErrorPretty` on error
-  messages.
+* To render a error message, apply `parseErrorPretty` on it.
 
 * `count' m n p` allows you to parse from `m` to `n` occurrences of `p`.
 
-* Now you have `someTill` and `eitherP` out of box.
+* Now you have `someTill` and `eitherP` out of the box.
 
 * `token`-based combinators like `string` and `string'` backtrack by
   default, so it's not necessary to use `try` with them (beginning from
   `4.4.0`). This feature does not affect performance.
 
-* The new `failure` combinator allows to fail with arbitrary error message,
-  even with completely custom one.
+* The new `failure` combinator allows to fail with an arbitrary error
+  message, it even allows to use your own data types.
 
 ## Character parsing
 
@@ -226,14 +231,14 @@ symbol = L.symbol sc
 
 ### Monad transformers
 
-Note that all tools in Megaparsec work with any instance of
-`MonadParsec`. All commonly useful monad transformers like `StateT` and
-`WriterT` are instances of `MonadParsec` out of box. For example, what if
-you want to collect contents of comments, (say, they are documentation
-strings of a sort), you may want to have backtracking user state were you
-put last encountered comment satisfying some criteria, and then when you
-parse function definition you can check the state and attach doc-string to
-your parsed function. It's all possible and easy with Megaparsec:
+Note that all tools in Megaparsec work with any instance of `MonadParsec`.
+All commonly useful monad transformers like `StateT` and `WriterT` are
+instances of `MonadParsec` out of the box. For example, what if you want to
+collect contents of comments, (say, they are documentation strings of a
+sort), you may want to have backtracking user state were you put last
+encountered comment satisfying some criteria, and then when you parse
+function definition you can check the state and attach doc-string to your
+parsed function. It's all possible and easy with Megaparsec:
 
 ```haskell
 import Control.Monad.State.Lazy
@@ -287,7 +292,7 @@ see `nonIndented`, `indentBlock`, and `lineFold` in the
 ### Character and string literals
 
 Parsing of string and character literals is done a bit differently than in
-Parsec. You have single helper `charLiteral`, which parses character
+Parsec. You have the single helper `charLiteral`, which parses a character
 literal. It *does not* parse surrounding quotes, because different languages
 may quote character literals differently. Purpose of this parser is to help
 with parsing of conventional escape sequences (literal character is parsed
@@ -310,7 +315,7 @@ stringLiteral = char '"' >> manyTill L.charLiteral (char '"')
 
 I should note that in `charLiteral` we use built-in support for parsing of
 all the tricky combinations of characters. On the other hand Parsec
-re-implements the whole thing. Given that it has no proper testing at all, I
+re-implements the whole thing. Given that it mostly has no tests at all, I
 cannot tell for sure that it works.
 
 ### Numbers
@@ -331,16 +336,15 @@ number lexeme L.number -- similar to ‘naturalOrFloat’ in Parsec
 Note that Megaparsec internally uses standard Haskell functions to parse
 floating point numbers, thus no precision loss is possible (and it's
 tested). On the other hand, Parsec again re-implements the whole thing.
-Approach taken by Parsec authors is just parse the numbers one by one and
-then re-create the floating point number by means of floating point
-arithmetic. Any professional knows that this is not possible and the only
-way to parse floating point number is via bit-level manipulation (it's
-usually done on OS level, in C libraries). Of course results produced by
-Parsec built-in parser for floating point numbers are incorrect. This is a
-known bug now, but it's been a long time till we “discovered” it, because
-again, Parsec has no test suite. (*Update*: it took one year but Parsec's
-maintainer has recently merged a pull request that seems to fix that and
-released Parsec 3.1.11.)
+Approach taken by Parsec authors is to parse the numbers one by one and then
+re-create the floating point number by means of floating point arithmetic.
+Any professional knows that this is not possible and the only way to parse
+floating point number is via bit-level manipulation (it's usually done on OS
+level, in C libraries). Of course results produced by Parsec built-in parser
+for floating point numbers are incorrect. This is a known bug now, but it's
+been a long time till we “discovered” it, because again, Parsec has no test
+suite. (*Update*: it took one year but Parsec's maintainer has recently
+merged a pull request that seems to fix that and released Parsec 3.1.11.)
 
 Hexadecimal and octal numbers do not parse “0x” or “0o” prefixes, because
 different languages may have other prefixes for this sort of numbers. We
@@ -378,5 +382,6 @@ entire `Text.Parsec.Token` module (people had to do it sometimes, you know).
 Changes you may want to perform may be more fundamental than those described
 here. For example, previously you may have to use a workaround because
 `Text.Parsec.Token` was not sufficiently flexible. Now you can replace it
-with proper solution. If you want to use full potential of Megaparsec, take
-time to read about its features, they can help you improve your code.
+with a proper solution. If you want to use the full potential of Megaparsec,
+take time to read about its features, they can help you improve your
+parsers.

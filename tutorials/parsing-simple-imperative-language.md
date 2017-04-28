@@ -22,7 +22,7 @@ material for a tutorial.
 
 ## Imports
 
-First let's import the necessary libraries:
+First let's import the necessary modules:
 
 ```haskell
 module Main (main) where
@@ -141,9 +141,9 @@ parser for block (multi-line) comments. `skipLineComment` and
 comments. (If our language didn't have block comments, we could pass `empty`
 from `Control.Applicative` as the third argument of `space`.)
 
-Next, we will use a strategy where whitespace will be consumed *after* every
-lexeme automatically, but not before it. Let's define a wrapper to achieve
-this:
+Next, we will follow the strategy where whitespace will be consumed *after*
+every lexeme automatically, but not before it. Let's define a wrapper to
+achieve this:
 
 ```haskell
 lexeme :: Parser a -> Parser a
@@ -184,7 +184,7 @@ semi = symbol ";"
 Great. To parse various operators we can just use `symbol`, but reserved
 words and identifiers are a bit trickier. There are two points to note:
 
-* Parsers of reserved words should check that the parsed reserved word is
+* Parsers for reserved words should check that the parsed reserved word is
   not a prefix of an identifier.
 
 * Parsers of identifiers should check that parsed identifier is not a
@@ -211,8 +211,9 @@ identifier = (lexeme . try) (p >>= check)
 `identifier` may seem complex, but it's actually simple. We just parse a
 sequence of characters where first character is a letter and the rest is
 several characters where every one of them can be either letter or number.
-Once we have parsed such string, we check if it's in list of reserved words,
-fail with informative message if it is, and return the result otherwise.
+Once we have parsed such a string, we check if it's in list of reserved
+words, fail with informative message if it is, and return the result
+otherwise.
 
 Note the use of `try` in `identifier`. This is necessary to backtrack to
 beginning of the identifier in cases when `fail` is evaluated. Otherwise
@@ -235,8 +236,8 @@ whileParser = between sc eof stmt
 ```
 
 Now because any statement might be actually a sequence of statements
-separated by semicolon, we use `sepBy1` to parse at least one statement. The
-result is a list of statements. We also allow grouping statements by
+separated by semicolons, we use `sepBy1` to parse at least one statement.
+The result is a list of statements. We also allow grouping statements with
 parentheses, which is useful, for instance, in the `while` loop.
 
 ```haskell
@@ -337,8 +338,8 @@ bOperators =
 In case of prefix operators it is enough to specify which one should be
 parsed and what is the associated data constructor. Infix operators are
 defined similarly, but there are several variants of infix constructors for
-various associativity. Note that the operator precedence depends only on the
-order of the elements in the list.
+various associativity options. Note that the operator precedence depends
+only on the order of the elements in the list.
 
 Finally we have to define the terms. In case of arithmetic expressions, it
 is quite simple:
@@ -350,9 +351,9 @@ aTerm = parens aExpr
   <|> IntConst <$> integer
 ```
 
-However, the term in a boolean expression is a bit more tricky. In this
-case, a term can also be an expression with relational operator consisting
-of arithmetic expressions.
+However, a term in a boolean expression is a bit more tricky. In this case,
+a term can also be an expression with relational operator consisting of
+arithmetic expressions.
 
 ```haskell
 bTerm :: Parser BExpr

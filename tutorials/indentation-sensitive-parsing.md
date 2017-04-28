@@ -50,20 +50,20 @@ nonIndented sc p = indentGuard sc EQ (unsafePos 1) *> p
 ```
 
 However, it's a part of a logical model behind high-level parsing of
-indentation-sensitive input. What is this model? We state that there are
-top-level items that are not indented (`nonIndented` helps to define parsers
-for them), and all indented tokens are directly or indirectly are “children”
-of those top-level definitions. In Megaparsec, we don't need any additional
-state to express this. Since all indentation is always relative, our idea is
-to explicitly tie parsers for “reference” tokens and indented tokens, thus
+indentation-sensitive input. We state that there are top-level items that
+are not indented (`nonIndented` helps to define parsers for them), and that
+all indented tokens are directly or indirectly are “children” of those
+top-level definitions. In Megaparsec, we don't need any additional state to
+express this. Since indentation is always relative, our idea is to
+explicitly tie parsers for “reference” tokens and indented tokens, thus
 defining indentation-sensitive grammar via pure combination of parsers, just
 like all the other tools in Megaparsec work. This is different from old
 solutions built on top of Parsec, where you had to deal with ad-hoc state.
 It's also more robust and safer, because the less state you have, the
 better.
 
-So, how do you define indented block? Let's take a look at the signature of
-the `indentBlock` helper:
+So, how do you define an indented block? Let's take a look at the signature
+of the `indentBlock` helper:
 
 ```haskell
 indentBlock :: (MonadParsec e s m, Token s ~ Char)
@@ -104,7 +104,8 @@ should be flexible enough.
 ## Parsing simple indented list
 
 Now it's time to put our new tools into practice. In this section, we will
-parse a simple indented list of some items. Let's begin with import section:
+parse a simple indented list of some items. Let's begin with the import
+section:
 
 ```haskell
 {-# LANGUAGE TupleSections #-}
@@ -118,7 +119,7 @@ import Text.Megaparsec.String
 import qualified Text.Megaparsec.Lexer as L
 ```
 
-We will need two kinds of space-consumers, one that consumes new lines `scn`
+We will need two kinds of space-consumers: one that consumes new lines `scn`
 and one that doesn't `sc` (actually it only parses spaces and tabs here):
 
 ```haskell
@@ -230,8 +231,7 @@ incorrect indentation (got 3, should be equal to 5)
 
 First message may be a bit surprising, but Megaparsec knows that there must
 be at least one item in the list, so it checks indentation level and it's 1,
-which is incorrect, so it reports it. I find current behavior satisfactory,
-but it may be changed in the future.
+which is incorrect, so it reports it.
 
 ## Nested indented list
 
@@ -293,7 +293,7 @@ And this looks like it works!
 
 ## Adding line folds
 
-`lineFold` helper is introduced in Megaparsec 5.0.0. Line fold consists of
+`lineFold` helper is introduced in Megaparsec 5.0.0. A line fold consists of
 several elements that can be put on one line or on several lines as long as
 indentation level of subsequent items is greater than indentation level of
 first item.
@@ -315,7 +315,7 @@ pLineFold = L.lineFold scn $ \sc' ->
 ```
 
 `lineFold` works like this: you give it space consumer that accepts newlines
-and it gives you special space consumer that you can use in callback to
+and it gives you special space consumer that you can use in the callback to
 consume space between elements of line fold. An important thing here is that
 you should use normal space consumer at the end of line fold or your fold
 will have no end.

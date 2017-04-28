@@ -10,7 +10,7 @@ types as part of data that is returned on parse failure. This opens up the
 possibility to tailor error messages to your domain of interest in a way
 that is quite unique to this library. Needless to say, all data that
 constitutes a error message is typed in Megaparsec 5, so it's easy to
-inspect and manipulate it after the fact.
+inspect and manipulate it.
 
 ## The goal
 
@@ -22,9 +22,9 @@ which is an alternative parser for the popular
 to parse CSV data. The default parser features not very user-friendly error
 messages, so I was asked to design a better one using Megaparsec 5.
 
-In addition to standard error messages (“expected” and “unexpected” tokens),
-the library can report problems that have to do with using methods from
-`FromRecord` and `FromNamedRecord` type classes that describe how to
+In addition to the standard error messages (“expected” and “unexpected”
+tokens), the library can report problems that have to do with using methods
+from `FromRecord` and `FromNamedRecord` type classes that describe how to
 transform a collection of `ByteString`s into a particular instance of those
 type classes. While performing the conversion, things may go wrong, and we
 would like to use a special data constructor in these cases.
@@ -144,7 +144,7 @@ As you can see it is just a sum type that accounts for all types of failures
 that we need to think about in the vanilla Megaparsec:
 
 * `fail` method
-* …and incorrect indentation related to machinery in
+* …and incorrect indentation related to the machinery in
   [`Text.Megaparsec.Lexer`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Lexer.html).
 
 What this means is that our new custom type should somehow provide a way to

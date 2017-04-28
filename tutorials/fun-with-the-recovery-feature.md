@@ -78,11 +78,12 @@ data Expr
 ```
 
 It's obvious that a program in our language is collection of equations,
-where every equation gives name to expression which in turn can be simply a
-number, reference to other equation, or some math involving those concepts.
+where every equation gives a name to an expression which in turn can be
+simply a number, reference to other equation, or some math involving those
+concepts.
 
-As usual, first thing that we need to handle when starting a parser is white
-space. We will have two space-consuming parsers:
+As usual, the first thing that we need to handle when starting a parser is
+white space. We will have two space-consuming parsers:
 
 * `scn` — consumes newlines and white space in general. We will use it for
   white space between equations, which will start with a newline (since
@@ -110,12 +111,12 @@ symbol :: String -> Parser String
 symbol = L.symbol sc
 ```
 
-Consult Haddocks for description of `L.space`, `L.lexeme`, and
-`L.symbol`. In short, `L.space` is a helper to quickly put together
-general-purpose space-consuming parser. We will follow this strategy:
-*assume no white space before lexemes and consume all white space after
-lexemes*. There is a case with white space that can be found before any
-lexeme, but that will be dealt with specially, see below.
+Consult Haddocks for description of `L.space`, `L.lexeme`, and `L.symbol`.
+In short, `L.space` is a helper to quickly put together general-purpose
+space-consuming parser. We will follow this strategy: *assume no white space
+before lexemes and consume all white space after lexemes*. There is a case
+with white space that can be found before any lexeme, but that will be dealt
+with specially, see below.
 
 We also need a parser for equation names (`x`, `y`, and `result` in the
 first example). Like in many other programming languages, we will accept
@@ -195,11 +196,11 @@ newline. This separation makes it possible to analyze many expressions
 independently, even if one of them is malformed, we have no reason to stop
 and not to check the others. In fact, that's how some “serious” parsers work
 (parser of C++ language, although it depends on compiler I guess). Reporting
-multiple parse errors at once may be more efficient method of communication
-with programmer that needs to fix them than when he has to recompile the
-program every time to get to the next error. In this section we will make
-our parser failure-tolerant and able to report multiple error messages at
-once.
+multiple parse errors at once may be a more efficient method of
+communication with programmer that needs to fix them than when he has to
+recompile the program every time to get to the next error. In this section
+we will make our parser failure-tolerant and able to report multiple error
+messages at once.
 
 Let's add one more type synonym — `RawData`:
 
@@ -245,8 +246,8 @@ Result:
 ```
 
 How does it work? `withRecovery r p` primitive runs parser `p` as usual, but
-if it fails, it just takes its `ParseError` and provides it as argument of
-`r`. In `r` you start right were `p` failed — no backtracking happens,
+if it fails, it just takes its `ParseError` and provides it as an argument
+of `r`. In `r` you start right were `p` failed — no backtracking happens,
 because it would make it harder to find position from where to start normal
 parsing again. Here you have a chance to consume some input to advance
 parser's textual position. In our case it's as simple as eating all input up
@@ -256,11 +257,11 @@ You probably want to know now what happens when recovering parser `r` fails
 as well. The answer is: your parser fails as usual, as if no `withRecovery`
 primitive was used. It's by design that recovering parser cannot influence
 error messages in any way, or it would lead to quite confusing error
-messages in some cases, depending on logic of recovering parser.
+messages in some cases, depending on the logic of the recovering parser.
 
 Now it's up to you what to do with `RawData`. You can either take all error
-messages and print them one by one, or ignore altogether and filter only
-valid equations to work with.
+messages and print them one by one, or ignore errors altogether and filter
+only valid equations to work with.
 
 ## Conclusion
 
@@ -268,7 +269,7 @@ When you want to use `withRecovery`, the main thing to remember that parts
 of text that you want to allow to fail should be clearly separated from each
 other, so recovering parser can reliably skip to the next part if current
 part cannot be parsed. In a language like Python, you could use indentation
-levels to tell apart high-level definitions, for example. In every case you
+levels to get to next top-level definition, for example. In every case you
 should use your judgment and creativity to decide how to make use of
 `withRecovery`. In some cases it may be not worth it, but more often than
 not you will be able to improve experience of people who work with your

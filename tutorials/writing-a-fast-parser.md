@@ -32,11 +32,16 @@ thing when tuning performance).
 
 * Inline generously (when it makes sense, of course). You may not believe
   your eyes when you see how much of a difference inlining can do,
-  especially for short functions.
+  especially for short functions. This is especially true for parsers that
+  are defined in one module and used in another one, because `INLINE` and
+  `INLINEABLE` pragmas make GHC dump functions definitions into an interface
+  file and this facilitates specializing (I've written a tutorial about
+  this,
+  [available here](https://www.stackbuilders.com/tutorials/haskell/ghc-optimization-and-fusion/)).
 
 The same parser can be written in many ways. Think about your grammar and
 how parsing happens, when you get some experience with this process, it will
 be much easier for you to see how to make your parser faster. Sometimes
-however, making a parser faster will also make code less readable. If
+however, making a parser faster will also make your code less readable. If
 performance of your parser is not a bottleneck in the system you are
 building, consider preferring readability over performance.

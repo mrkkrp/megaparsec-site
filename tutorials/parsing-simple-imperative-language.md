@@ -1,7 +1,7 @@
 ---
 title: Parsing a simple imperative language
 subtitle: Based on original Parsec tutorial
-published: January 1, 2017
+published: May 25, 2017
 code: ParsingWhile.hs
 difficulty: 2
 ---
@@ -30,7 +30,7 @@ module Main (main) where
 import Control.Monad (void)
 import Text.Megaparsec
 import Text.Megaparsec.Expr
-import Text.Megaparsec.String -- input stream is of type ‘String’
+import Text.Megaparsec.String -- input stream is of the type ‘String’
 import qualified Text.Megaparsec.Lexer as L
 ```
 
@@ -46,7 +46,7 @@ opb ::= and | or
 opr ::= > | <
 ```
 
-Note that we have three groups of operators — arithmetic, boolean and
+Note that we have three groups of operators—arithmetic, boolean and
 relational ones.
 
 And now the definition of statements:
@@ -76,13 +76,19 @@ data BExpr
 Binary boolean operators:
 
 ```haskell
-data BBinOp = And | Or deriving (Show)
+data BBinOp
+  = And
+  | Or
+  deriving (Show)
 ```
 
 Relational operators:
 
 ```haskell
-data RBinOp = Greater | Less deriving (Show)
+data RBinOp
+  = Greater
+  | Less
+  deriving (Show)
 ```
 
 Now we define the types for arithmetic expressions:
@@ -182,7 +188,7 @@ semi = symbol ";"
 ```
 
 Great. To parse various operators we can just use `symbol`, but reserved
-words and identifiers are a bit trickier. There are two points to note:
+words and identifiers are a bit trickier. There are two things to note:
 
 * Parsers for reserved words should check that the parsed reserved word is
   not a prefix of an identifier.
@@ -209,25 +215,25 @@ identifier = (lexeme . try) (p >>= check)
 ```
 
 `identifier` may seem complex, but it's actually simple. We just parse a
-sequence of characters where first character is a letter and the rest is
-several characters where every one of them can be either letter or number.
-Once we have parsed such a string, we check if it's in list of reserved
-words, fail with informative message if it is, and return the result
-otherwise.
+sequence of characters where the first character is a letter and the rest is
+several characters where every one of them can be either a letter or a
+digit. Once we have parsed such a string, we check if it's in the list of
+reserved words, fail with an informative message if it is, and return the
+result otherwise.
 
 Note the use of `try` in `identifier`. This is necessary to backtrack to
 beginning of the identifier in cases when `fail` is evaluated. Otherwise
 things like `many identifier` would fail on such identifiers instead of just
 stopping.
 
-And that's it, we have just written lexer for our language, now we can start
-writing parser.
+And that's it, we have just written the lexer for our language, now we can
+start writing the parser.
 
 ## Parser
 
 As already mentioned, a program in this language is simply a statement, so
 the main parser should basically only parse a statement. But remember to
-take care of initial whitespace — our parsers only get rid of whitespace
+take care of initial whitespace—our parsers only get rid of whitespace
 *after* the tokens!
 
 ```haskell
@@ -252,8 +258,8 @@ stmtSeq = f <$> sepBy1 stmt' semi
 
 Now a single statement is quite simple, it's either an `if` conditional, a
 `while` loop, an assignment or simply a `skip` statement. We use `<|>` to
-express choice. So `a <|> b` will first try parser `a` and if it fails (but
-without actually consuming any input) then parser `b` will be used. *Note:
+express choice. So `a <|> b` will first try parser `a` and if it fails
+(without actually consuming any input) then parser `b` will be used. *Note:
 this means that the order is important.*
 
 ```haskell
@@ -335,14 +341,14 @@ bOperators =
   ]
 ```
 
-In case of prefix operators it is enough to specify which one should be
+In the case of prefix operators it is enough to specify which one should be
 parsed and what is the associated data constructor. Infix operators are
 defined similarly, but there are several variants of infix constructors for
 various associativity options. Note that the operator precedence depends
 only on the order of the elements in the list.
 
-Finally we have to define the terms. In case of arithmetic expressions, it
-is quite simple:
+Finally we have to define the terms. In the case of arithmetic expressions,
+it is quite simple:
 
 ```haskell
 aTerm :: Parser AExpr

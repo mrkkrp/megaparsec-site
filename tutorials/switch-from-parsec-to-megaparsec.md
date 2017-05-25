@@ -1,7 +1,7 @@
 ---
 title: Switch from Parsec to Megaparsec
 subtitle: Practical recommendations
-published: May 14, 2016
+published: May 25, 2017
 difficulty: 4
 ---
 
@@ -47,7 +47,7 @@ import qualified Text.Megaparsec.Lexer as L
 
 So, the only noticeable difference that Megaparsec has no
 `Text.Megaparsec.Token` module which is replaced with
-`Text.Megaparsec.Lexer`, see about this in
+`Text.Megaparsec.Lexer`, see about this in the
 section
 [“What happened to `Text.Parsec.Token`”](#what-happened-to-text.parsec.token).
 
@@ -77,7 +77,7 @@ Character parsing:
 * `spaces` → `space` †
 * `upper` → `upperChar`
 
-† — pay attention to these, since `space` parses *many* `spaceChar`s,
+†—pay attention to these, since `space` parses *many* `spaceChar`s,
 including zero, if you write something like `many space`, your parser will
 hang. So be careful to replace `many space` with either `many spaceChar` or
 `spaces`.
@@ -88,11 +88,11 @@ Parsec also has many names for the same or similar things. Megaparsec
 usually has one function per task that does its job well. Here are the items
 that were removed in Megaparsec and reasons of their removal:
 
-* `parseFromFile` — from file and then parsing its contents is trivial for
+* `parseFromFile`—from file and then parsing its contents is trivial for
   every instance of `Stream` and this function provides no way to use newer
   methods for running a parser, such as `runParser'`.
 
-* `getState`, `putState`, `modifyState` — ad-hoc backtracking user state has
+* `getState`, `putState`, `modifyState`—ad-hoc backtracking user state has
   been eliminated.
 
 * `unexpected`, `token` and `tokens`, now there is a bit different versions
@@ -104,9 +104,8 @@ that were removed in Megaparsec and reasons of their removal:
 * `runPT` and `runP` were essentially synonyms for `runParserT` and
   `runParser` respectively.
 
-* `chainl`, `chainl1`, `chainr`, and `chainr1` — use
-  [`Text.Megaparsec.Expr`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Expr.html)
-  instead.
+* `chainl`, `chainl1`, `chainr`, and `chainr1`—use
+  [`Text.Megaparsec.Expr`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Expr.html) instead.
 
 ## Completely changed things
 
@@ -127,15 +126,15 @@ like the fact that we have well-typed and extensible error messages now.
 * Don't use the `label ""` (or the `… <?> ""`) idiom to “hide” some
   “expected” tokens from error messages, use `hidden`.
 
-* New `token` parser is more powerful, its first argument provides full
+* The new `token` parser is more powerful, its first argument provides full
   control over reported error message while its second argument allows to
-  specify how to report missing token in case of empty input stream.
+  specify how to report a missing token in case of empty input stream.
 
 * Now `tokens` parser allows to control how tokens are compared (yes, we
   have case-insensitive `string` called `string'`).
 
 * The `unexpected` parser allows to specify precisely what is unexpected in
-  well-typed manner.
+  a well-typed manner.
 
 * Tab width is not hard-coded anymore, use `getTabWidth` and `setTabWidth`
   to change it. Default tab width is `defaultTabWidth`.
@@ -187,9 +186,9 @@ Ever wanted to have case-insensitive character parsers? Here you go:
 table second. To specify associativity of infix operators you use one of the
 three `Operator` constructors:
 
-* `InfixN` — non-associative infix
-* `InfixL` — left-associative infix
-* `InfixR` — right-associative infix
+* `InfixN`—non-associative infix
+* `InfixL`—left-associative infix
+* `InfixR`—right-associative infix
 
 ## What happened to `Text.Parsec.Token`?
 
@@ -260,13 +259,13 @@ sc = space (void spaceChar) skipLineComment' skipBlockComment'
 ### Indentation-sensitive languages
 
 Parsing of indentation-sensitive language deserves its own tutorial, but
-let's take a look at basic tools upon which you can build. First of all you
-should work with space consumer that doesn't eat newlines
-automatically. This means you'll need to pick them up manually.
+let's take a look at the basic tools upon which you can build. First of all
+you should work with space consumer that doesn't eat newlines automatically.
+This means you'll need to pick them up manually.
 
-Main helper is called `indentGuard`. It takes parser that will be used to
-consume white space (indentation) and a predicate of type `Int -> Bool`. If
-after running the given parser column number does not satisfy given
+The main helper is called `indentGuard`. It takes a parser that will be used
+to consume white space (indentation) and a predicate of type `Int -> Bool`.
+If after running the given parser column number does not satisfy given
 predicate, the parser fails with message “incorrect indentation”, otherwise
 it returns current column number.
 
@@ -279,8 +278,8 @@ some sort of state you can achieve backtracking state combining `StateT` and
 StateT Int Parser a
 ```
 
-Here we have state of type `Int`. You can use `get` and `put` as usual,
-although it may be better to write modified version of `indentGuard` that
+Here we have state of the type `Int`. You can use `get` and `put` as usual,
+although it may be better to write a modified version of `indentGuard` that
 could get current indentation level (indentation level on previous line),
 then consume indentation of current line, perform necessary checks, and put
 new level of indentation.
@@ -333,7 +332,7 @@ number :: Parser Scientific
 number lexeme L.number -- similar to ‘naturalOrFloat’ in Parsec
 ```
 
-Note that Megaparsec internally uses standard Haskell functions to parse
+Note that Megaparsec internally uses the standard Haskell functions to parse
 floating point numbers, thus no precision loss is possible (and it's
 tested). On the other hand, Parsec again re-implements the whole thing.
 Approach taken by Parsec authors is to parse the numbers one by one and then
@@ -360,7 +359,7 @@ octal = lexeme $ char '0' >> char' 'o' >> L.octal
 
 Since Haskell report says nothing about sign in numeric literals, basic
 parsers like `integer` do not parse sign. You can easily create parsers for
-signed numbers with help of `signed`:
+signed numbers with the help of `signed`:
 
 ```haskell
 signedInteger :: Parser Integer

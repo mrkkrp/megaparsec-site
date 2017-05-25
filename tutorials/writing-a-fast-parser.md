@@ -1,22 +1,22 @@
 ---
 title: Writing a fast parser
 subtitle: Practical recommendations
-published: September 11, 2016
+published: May 25, 2017
 difficulty: 4
 ---
 
 If performance of your Megaparsec parser is worse that you hoped, there may
 be ways to improve it. This short guide will instruct you what to attempt,
 but you should always check if you're getting better results by profiling
-your parsers (that's the only way to understand if you are doing the right
-thing when tuning performance).
+and benchmarking your parsers (that's the only way to understand if you are
+doing the right thing when tuning performance).
 
-* If your parser uses monad stack instead of plain `Parsec` monad (which is
-  a monad transformer over `Identity` too, but it's much more lightweight),
-  make sure you use at least version 0.5 of `transformers` library, and at
-  least version 5.0 of `megaparsec`. Both libraries have critical
-  performance improvements in those versions, so you can just get better
-  performance for free.
+* If your parser uses a monad stack instead of plain `Parsec` monad (which
+  is a monad transformer over `Identity` too, but it's much more
+  lightweight), make sure you use at least version 0.5 of `transformers`
+  library, and at least version 5.0 of `megaparsec`. Both libraries have
+  critical performance improvements in those versions, so you can just get
+  better performance for free.
 
 * `Parsec` monad will be always faster then `ParsecT`-based monad
   transformers. Avoid using `StateT`, `WriterT`, and other monad

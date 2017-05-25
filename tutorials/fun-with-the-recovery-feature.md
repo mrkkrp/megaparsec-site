@@ -1,7 +1,7 @@
 ---
 title: Fun with the recovery feature
 subtitle: Skip errors and report multiple errors at once
-published: January 1, 2017
+published: May 25, 2017
 code: RecoveryFeature.hs
 difficulty: 3
 ---
@@ -32,10 +32,10 @@ result = x - 1 # answer is 32
 
 Here, it can only calculate arithmetic expressions, but if we were to design
 something more powerful, we could introduce more interesting operators to
-grab input from console, etc., but since our aim is to explore new parsing
+grab input from console, etc., but since our aim is to explore a new parsing
 feature, this language will do.
 
-First, we will write parser that can parse entire program in this language
+First, we will write a parser that can parse entire program in this language
 as list of ASTs representing equations. Then we will make it
 failure-tolerant in a way, so when it cannot parse particular equation, it
 does not stop, but continues its work until all input is analyzed.
@@ -64,7 +64,8 @@ To represent AST of our language we will use these definitions:
 ```haskell
 type Program = [Equation]
 
-data Equation = Equation String Expr deriving (Eq, Show)
+data Equation = Equation String Expr
+  deriving (Eq, Show)
 
 data Expr
   = Value          Double
@@ -85,12 +86,12 @@ concepts.
 As usual, the first thing that we need to handle when starting a parser is
 white space. We will have two space-consuming parsers:
 
-* `scn` — consumes newlines and white space in general. We will use it for
+* `scn`—consumes newlines and white space in general. We will use it for
   white space between equations, which will start with a newline (since
   equations are newline-delimited).
 
-* `sc` — this does not consume newlines and is used to define lexemes,
-  i.e. things that automatically eat white space after them.
+* `sc`—this does not consume newlines and is used to define lexemes, i.e.
+  things that automatically eat white space after them.
 
 Here is what I've got:
 
@@ -112,7 +113,7 @@ symbol = L.symbol sc
 ```
 
 Consult Haddocks for description of `L.space`, `L.lexeme`, and `L.symbol`.
-In short, `L.space` is a helper to quickly put together general-purpose
+In short, `L.space` is a helper to quickly put together a general-purpose
 space-consuming parser. We will follow this strategy: *assume no white space
 before lexemes and consume all white space after lexemes*. There is a case
 with white space that can be found before any lexeme, but that will be dealt
@@ -182,7 +183,7 @@ prog = between scn eof (sepEndBy equation scn)
 ```
 
 Note that we need to consume leading white-space in `prog` manually, as
-described above. Try the `prog` parser — it's a complete solution that can
+described above. Try the `prog` parser—it's a complete solution that can
 parse language we described in the beginning. Parsing “end of file” `eof`
 explicitly makes the parser consume all input and fail loudly if it cannot
 do it, otherwise it would just stop on the first problematic token and
@@ -197,22 +198,23 @@ independently, even if one of them is malformed, we have no reason to stop
 and not to check the others. In fact, that's how some “serious” parsers work
 (parser of C++ language, although it depends on compiler I guess). Reporting
 multiple parse errors at once may be a more efficient method of
-communication with programmer that needs to fix them than when he has to
-recompile the program every time to get to the next error. In this section
-we will make our parser failure-tolerant and able to report multiple error
-messages at once.
+communication with the programmer who needs to fix them, than when he/she
+has to recompile the program every time to get to the next error. In this
+section we will make our parser failure-tolerant and able to report multiple
+error messages at once.
 
-Let's add one more type synonym — `RawData`:
+Let's add one more type synonym—`RawData`:
 
 ```haskell
 type RawData t e = [Either (ParseError t e) Equation]
 ```
 
 This represents a collection of equations, just like `Program`, but every
-one of them may be malformed: in that case we get original error message in
-`Left`, otherwise we have properly parsed equation in `Right`.
+one of them may be malformed: in that case we get the original error message
+in `Left`, otherwise we have properly parsed equation in `Right`.
 
-You will be amazed just how easy it is to add recovering to existing parser:
+You will be amazed just how easy it is to add recovering to an existing
+parser:
 
 ```haskell
 rawData :: Parser (RawData Char Dec)
@@ -230,7 +232,7 @@ bar = 15
 
 Result:
 
-```
+```haskell
 [ Left
    (ParseError
      { errorPos = SourcePos
@@ -245,13 +247,13 @@ Result:
 , Right (Equation "bar" (Value 15.0)) ]
 ```
 
-How does it work? `withRecovery r p` primitive runs parser `p` as usual, but
-if it fails, it just takes its `ParseError` and provides it as an argument
-of `r`. In `r` you start right were `p` failed — no backtracking happens,
-because it would make it harder to find position from where to start normal
-parsing again. Here you have a chance to consume some input to advance
-parser's textual position. In our case it's as simple as eating all input up
-to the next newline, but it might be trickier.
+How does it work? `withRecovery r p` primitive runs the parser `p` as usual,
+but if it fails, it just takes its `ParseError` and provides it as an
+argument of `r`. In `r` you start right were `p` failed—no backtracking
+happens, because it would make it harder to find position from where to
+start normal parsing again. Here you have a chance to consume some input to
+advance the parser's textual position. In our case it's as simple as eating
+all input up to the next newline, but it might be trickier.
 
 You probably want to know now what happens when recovering parser `r` fails
 as well. The answer is: your parser fails as usual, as if no `withRecovery`
@@ -267,10 +269,10 @@ only valid equations to work with.
 
 When you want to use `withRecovery`, the main thing to remember that parts
 of text that you want to allow to fail should be clearly separated from each
-other, so recovering parser can reliably skip to the next part if current
-part cannot be parsed. In a language like Python, you could use indentation
-levels to get to next top-level definition, for example. In every case you
-should use your judgment and creativity to decide how to make use of
-`withRecovery`. In some cases it may be not worth it, but more often than
-not you will be able to improve experience of people who work with your
+other, so recovering parser can reliably skip to the next part if the
+current part cannot be parsed. In a language like Python, you could use
+indentation levels to tell apart high-level definitions, for example. In
+every case you should use your judgment and creativity to decide how to make
+use of `withRecovery`. In some cases it may be not worth it, but more often
+than not you will be able to improve experience of people who work with your
 product by using this new Megaparsec's feature.

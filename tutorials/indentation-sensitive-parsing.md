@@ -1,7 +1,7 @@
 ---
 title: Indentation-sensitive parsing
 subtitle: Native, composable solution
-published: December 2, 2016
+published: May 25, 2017
 code: IndentationSensitiveParsing.hs
 difficulty: 3
 ---
@@ -10,11 +10,11 @@ Megaparsec 4.3.0 introduces new combinators that should be of some use when
 you want to parse indentation-sensitive input. Megaparsec 5.0.0 adds support
 for line-folds, completing support for indentation-sensitive parsing. This
 tutorial shows how these new tools work, compose, and hopefully, *feel
-natural* — something we cannot say about ad-hoc solutions to this problem
-that exist as separate packages to work on top of Parsec, for example.
+natural*—something we cannot say about ad-hoc solutions to this problem that
+exist as separate packages to work on top of Parsec, for example.
 
 1. [Combinator overview](#combinator-overview)
-2. [Parsing simple indented list](#parsing-simple-indented-list)
+2. [Parsing a simple indented list](#parsing-a-simple-indented-list)
 3. [Nested indented list](#nested-indented-list)
 4. [Adding line folds](#adding-line-folds)
 5. [Conclusion](#conclusion)
@@ -22,7 +22,7 @@ that exist as separate packages to work on top of Parsec, for example.
 ## Combinator overview
 
 From the first release of Megaparsec, there has been the `indentGuard`
-function, which is a great shortcut, but kind of pain to use for complex
+function, which is a great shortcut, but a kind of pain to use for complex
 tasks. So, we won't cover it here, instead we will talk about the new
 combinators built upon it and available beginning from Megaparsec 4.3.0.
 
@@ -97,11 +97,11 @@ data IndentOpt m a b
 
 We can change our mind and parse no indented tokens, we can parse *many*
 (that is, possibly zero) indented tokens or require *at least one* such
-token. We can either allow `indentBlock` detect indentation level of first
-indented token and use that, or manually specify indentation level. This
-should be flexible enough.
+token. We can either allow `indentBlock` detect indentation level of the
+first indented token and use that, or manually specify indentation level.
+This should be flexible enough.
 
-## Parsing simple indented list
+## Parsing a simple indented list
 
 Now it's time to put our new tools into practice. In this section, we will
 parse a simple indented list of some items. Let's begin with the import
@@ -138,7 +138,8 @@ lexeme = L.lexeme sc
 
 Just for fun, we will allow line comments that start with `#` as well.
 
-Assuming `pItemList` parses entire list, we can define high-level parser as:
+Assuming `pItemList` parses the entire list, we can define the high-level
+parser as:
 
 ```haskell
 parser :: Parser (String, [String])
@@ -186,9 +187,9 @@ expecting end of input
 ```
 
 Remember that we're using `IndentMany` option, so empty lists are OK, on the
-other hand built-in combinator `space` has hidden the phrase “expecting more
-space” from error messages (usually you don't want it because it adds noise
-to all messages), so this error message is perfectly reasonable.
+other hand the built-in combinator `space` has hidden the phrase “expecting
+more space” from error messages (usually you don't want it because it adds
+noise to all messages), so this error message is perfectly reasonable.
 
 Let's continue:
 
@@ -239,7 +240,7 @@ What I like about `indentBlock` is that another `indentBlock` can be put
 inside of it and the whole thing will work smoothly, parsing more complex
 input with several levels of indentation. No additional effort is required.
 
-Let's allow list items to have sub-items. For this we will need one new
+Let's allow list items to have sub-items. For this we will need a new
 parser, `pComplexItem` (looks familiar…):
 
 ```haskell
@@ -296,7 +297,7 @@ And this looks like it works!
 `lineFold` helper is introduced in Megaparsec 5.0.0. A line fold consists of
 several elements that can be put on one line or on several lines as long as
 indentation level of subsequent items is greater than indentation level of
-first item.
+the first item.
 
 Let's make use of `lineFold` and add line folds to our program.
 
@@ -314,21 +315,21 @@ pLineFold = L.lineFold scn $ \sc' ->
   in unwords <$> ps <* sc
 ```
 
-`lineFold` works like this: you give it space consumer that accepts newlines
-and it gives you special space consumer that you can use in the callback to
-consume space between elements of line fold. An important thing here is that
-you should use normal space consumer at the end of line fold or your fold
-will have no end.
+`lineFold` works like this: you give it a space consumer that accepts
+newlines and it gives you a special space consumer that you can use in the
+callback to consume space between elements of line fold. An important thing
+here is that you should use normal space consumer at the end of line fold or
+your fold will have no end.
 
 Playing with the final version of our parser is left as an exercise for the
-reader — you can create “items” that consist of multiple words and as long
-as they are “line-folded” they will be parsed and concatenated with single
+reader—you can create “items” that consist of multiple words and as long as
+they are “line-folded” they will be parsed and concatenated with single
 space between them.
 
 ## Conclusion
 
-Note that every sub-list behaves independently — you will see that if you
-try to feed the parser with various variants of malformed data. And this is
-no surprise, since no state is shared between different parts of the
-structure — it's just assembled purely from simpler parts — sufficiently
-elegant solution in the spirit of the rest of the library.
+Note that every sub-list behaves independently—you will see that if you try
+to feed the parser with various variants of malformed data. And this is no
+surprise, since no state is shared between different parts of the
+structure—it's just assembled purely from simpler parts—sufficiently elegant
+solution in the spirit of the rest of the library.

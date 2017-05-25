@@ -1,7 +1,7 @@
 ---
 title: How to introduce custom error messages
 subtitle: It's possible to use user-defined data types as part of parse errors
-published: August 10, 2016
+published: May 25, 2017
 difficulty: 3
 ---
 
@@ -14,13 +14,14 @@ inspect and manipulate it.
 
 ## The goal
 
-In this tutorial we will walk through creation of a parser found in an
+In this tutorial we will walk through creation of a parser found in the
 existing library called
 [`cassava-megaparsec`](https://hackage.haskell.org/package/cassava-megaparsec),
-which is an alternative parser for the popular
-[`cassava`](https://hackage.haskell.org/package/cassava) library that allows
-to parse CSV data. The default parser features not very user-friendly error
-messages, so I was asked to design a better one using Megaparsec 5.
+which is an alternative parser for the
+popular [`cassava`](https://hackage.haskell.org/package/cassava) library
+that allows to parse CSV data. The default parser features not very
+user-friendly error messages, so I was asked to design a better one using
+Megaparsec 5.
 
 In addition to the standard error messages (“expected” and “unexpected”
 tokens), the library can report problems that have to do with using methods
@@ -87,18 +88,18 @@ errors are represented in Megaparsec 5.
 The main type for error messages in `ParseError` which is defined like this:
 
 ```haskell
--- | The data type @ParseError@ represents parse errors. It provides the
--- stack of source positions, set of expected and unexpected tokens as well
--- as set of custom associated data. The data type is parametrized over
--- token type @t@ and custom data @e@.
+-- | 'ParseError' represents… parse errors. It provides the stack of source
+-- positions, a set of expected and unexpected tokens as well as a set of
+-- custom associated data. The data type is parametrized over the token type
+-- @t@ and the custom data @e@.
 --
--- Note that stack of source positions contains current position as its
+-- Note that the stack of source positions contains current position as its
 -- head, and the rest of positions allows to track full sequence of include
 -- files with topmost source file at the end of the list.
 --
--- 'Semigroup' (or 'Monoid') instance of the data type allows to merge parse
--- errors from different branches of parsing. When merging two
--- 'ParseError's, longest match is preferred; if positions are the same,
+-- 'Semigroup' (and 'Monoid') instance of the data type allows to merge
+-- parse errors from different branches of parsing. When merging two
+-- 'ParseError's, the longest match is preferred; if positions are the same,
 -- custom data sets and collections of message items are combined.
 
 data ParseError t e = ParseError
@@ -112,15 +113,12 @@ data ParseError t e = ParseError
 Conceptually, we have four components in a parse error:
 
 * Position (may be multi-dimensional to support include files).
-
 * Unexpected “items” (see [`ErrorItem`](https://hackage.haskell.org/package/megaparsec/docs/Text-Megaparsec-Error.html#t:ErrorItem) if you are curious).
-
 * Expected “items”.
+* Everything else—here we have a set of things of `e` type. `e` is the type
+  we will be defining and using in this tutorial.
 
-* Everything else — here we have a set of things of `e` type. `e` is the
-  type we will be defining and using in this tutorial.
-
-## Defining custom error component
+## Defining a custom error component
 
 We cannot ship the library without some sort of default candidate to take
 the place of `e` type, so here it is:
@@ -179,7 +177,7 @@ class Ord e => ErrorComponent e where
 ```
 
 Every type that is going to be used as part of `ParseError` must be an
-instance of `ErrorComponent` type class.
+instance of the `ErrorComponent` type class.
 
 Another thing we would like to do with custom error component is to format
 it somehow, so it could be inserted in pretty-printed representation of
@@ -239,9 +237,9 @@ added a special case represented by `CecConversionError`. It contains a
 Cassava provided typed error values, but `String` is all we have, so let's
 work with it.
 
-Another handy definition we need is `Parser` type synonym. We cannot use one
-of the default `Parser` definitions because those assume `Dec`, so we define
-it ourselves rather trivially:
+Another handy definition we need is the `Parser` type synonym. We cannot use
+one of the default `Parser` definitions because those assume `Dec`, so we
+define it ourselves rather trivially:
 
 ```haskell
 -- | Parser type that uses “custom error component” 'Cec'.
@@ -398,10 +396,10 @@ unescapedField del = BC8.pack <$!> many (noneOf es)
     es = chr (fromIntegral del) : "\"\n\r"
 ```
 
-To parse a record we have to parse non-empty collection of fields separated
-by delimiter characters (supplied from the `DecodeOptions` thing). Then we
-convert it to `Vector ByteString`, because that's what Cassava's conversion
-functions expect:
+To parse a record we have to parse a non-empty collection of fields
+separated by delimiter characters (supplied from the `DecodeOptions` thing).
+Then we convert it to `Vector ByteString`, because that's what Cassava's
+conversion functions expect:
 
 ```haskell
 -- | Parse a record, not including the terminating line separator. The

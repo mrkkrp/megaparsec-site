@@ -13,7 +13,8 @@ import qualified Text.Megaparsec.Lexer as L
 
 type Program = [Equation]
 
-data Equation = Equation String Expr deriving (Eq, Show)
+data Equation = Equation String Expr
+  deriving (Eq, Show)
 
 data Expr
   = Value          Double

@@ -1,0 +1,4 @@
+infixL + - 12
+infixR * / 22
+infixR ^ 24
+postfix ! 28

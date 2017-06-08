@@ -2,6 +2,12 @@
 
 [![License BSD3](https://img.shields.io/badge/license-BSD3-brightgreen.svg)](http://opensource.org/licenses/BSD-3-Clause)
 
+**This site is deprecated, the content has been moved to
+https://markkarpov.com/learn-haskell.html#megaparsec-tutorials to simplify
+maintenance and because I (Mark) am still the sole contributor of all the
+tutorials. Don't worry, old tutorial links will still work via a 301
+redirect.**
+
 This site provides tutorials and other materials related to
 [Megaparsec](https://github.com/mrkkrp/megaparsec) project, which is a
 modern monadic parser combinator library written in Haskell.
